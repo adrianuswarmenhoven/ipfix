@@ -1,0 +1,2 @@
+- Get a fully sendable message
+- Do not worry about content
