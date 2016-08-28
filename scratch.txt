@@ -1,2 +1,66 @@
 - Get a fully sendable message
 - Do not worry about content
+
+The message header contains the following fields:
+
+Version—Version of the flow record format exported in this message. The value of this field is 0x000a.
+Length—Total length of the IPFIX message, measured in octets, including the header and Sets fields.
+Export Time—Time, in seconds, since midnight Coordinated Universal Time (UTC) of January 1, 1970, at which the IPFIX message header leaves the exporter. Sequence Number—Incremental sequence counter with a value of 2^32 (2 raised to the power of 32) of all IPFIX data records sent from the current Observation Domain by the exporting process. Template and Options Template records do not increase the Sequence Number attribute.
+Observation Domain ID—A 32-bit identifier of the Observation Domain that is locally unique to the exporter.
+
+ boolean
+
+   The boolean data type is specified according to the TruthValue in
+   [RFC2579]: it is an integer with the value 1 for true and a value 2
+   for false.  Every other value is undefined.  The boolean data type
+   MUST be encoded in a single octet.
+
+   In most cases, the length of the Information Element will be less
+   than 255 octets.  The following length-encoding mechanism optimizes
+   the overhead of carrying the Information Element length in this
+   majority case.  The length is carried in the octet before the
+   Information Element, as shown in Figure R.
+
+
+
+
+
+
+
+
+
+
+Claise, et al.              Standards Track                    [Page 30]
+
+RFC 5101              IPFIX Protocol Specification          January 2008
+
+
+    0                   1                   2                   3
+    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   | Length (< 255)|          Information Element                  |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                      ... continuing as needed                 |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+   Figure R: Variable-Length Information Element (length < 255 octets)
+
+   If the length of the Information Element is greater than or equal to
+   255 octets, the length is encoded into 3 octets before the
+   Information Element.  The first octet is 255, and the length is
+   carried in the second and third octets, as shown in Figure S.
+
+    0                   1                   2                   3
+    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |      255      |      Length (0 to 65535)      |       IE      |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                      ... continuing as needed                 |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+   Figure S: Variable-Length Information Element (length 0 to 65535
+   octets)
+
+   The octets carrying the length (either the first or the first three
+   octets) MUST NOT be included in the length of the Information
+   Element.
