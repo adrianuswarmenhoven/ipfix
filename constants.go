@@ -3,7 +3,7 @@ package ipfixmessage
 const (
 	//Version of Flow Record format exported in this message.
 	//The value of this field is 0x000a for the current version, incrementing by one the version used in the NetFlow services export version 9 [RFC3954].
-	Version = 0x000a
+	IPFIXVersion = 0x000a
 
 	SetID_Invalid1       = 0 //RFC3954
 	SetID_Invalid2       = 1 //RFC3954
@@ -19,6 +19,6 @@ const (
 	BoolTrue  = 1
 	BoolFalse = 2
 
-	messageHeaderLength = 16 //Length of the message header. For calculations.
-
+	ipfixMessageHeaderLength = 128 //Length of the message header. For calculations.
+	ipfixSetHeaderLength     = 32
 )
