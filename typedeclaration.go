@@ -15,7 +15,7 @@ type IPFIXMessage struct {
 type IPFIXMessageHeader struct {
 	VersionNumber       uint16    //Must be Version
 	Length              uint16    //Total length of the IPFIX Message, measured in octets, including Message Header and Set(s).
-	ExportTime          time.Time //Time, in seconds (int64), since 0000 UTC Jan 1, 1970, at which the IPFIX Message Header leaves the Exporter.
+	ExportTime          time.Time //Time, in seconds (int32), since 0000 UTC Jan 1, 1970, at which the IPFIX Message Header leaves the Exporter.
 	SequenceNumber      uint32    //Incremental sequence counter modulo 2^32 of all IPFIX Data Records sent on this PR-SCTP stream from the current Observation Domain by the Exporting Process.
 	ObservationDomainID uint32    //A 32-bit identifier of the Observation Domain that is locally unique to the Exporting Process.
 }

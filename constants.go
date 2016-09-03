@@ -19,6 +19,6 @@ const (
 	BoolTrue  = 1
 	BoolFalse = 2
 
-	ipfixMessageHeaderLength = 128 //Length of the message header. For calculations.
-	ipfixSetHeaderLength     = 32
+	ipfixMessageHeaderLength = 16 //Length of the message header. For calculations.
+	ipfixSetHeaderLength     = 4
 )
