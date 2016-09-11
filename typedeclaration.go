@@ -71,5 +71,5 @@ type IPFIXFieldSpecifier struct {
 //--- Data Record
 
 type IPFIXDataRecord struct {
-	FieldValue []interface{} //Note that Field Values do not necessarily have a length of 16 bits. Field Values are encoded according to their data type specified in [RFC5102].
+	FieldValue []IPFIXFieldValue //Note that Field Values do not necessarily have a length of 16 bits. Field Values are encoded according to their data type specified in [RFC5102].
 }

@@ -550,7 +550,8 @@ RFC 7012                 IPFIX Information Model          September 2013
 
 3.1.13.  octetArray
 
-   The type "octetArray" represents a finite-length string of octets.
+   The type "macAddress" represents a MAC-48 address as defined in
+   [IEEE.802-3.2012].
 
 
 
