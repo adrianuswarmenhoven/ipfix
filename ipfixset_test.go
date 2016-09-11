@@ -6,13 +6,13 @@ import (
 )
 
 func TestEmptySet(t *testing.T) {
-	testset, err := NewIPFIXSet(-1)
+	testset, err := NewSet(-1)
 
 	if (err == nil) || (testset != nil) {
 		t.Fatalf("Should have gotten error and nil pointer but got %#v", testset)
 	}
 
-	testset, err = NewIPFIXSet(SetID_Template)
+	testset, err = NewSet(SetID_Template)
 
 	if err != nil {
 		t.Fatalf("New IPFIX Set creation failed: %#v", err)
