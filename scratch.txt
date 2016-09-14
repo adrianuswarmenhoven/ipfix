@@ -1,6 +1,31 @@
 - Get a fully sendable message
 - Do not worry about content
 
+
+/*
+// Unmarshal a message header from a reader.
+func (h *MessageHeader) Unmarshal(r io.Reader) error {
+  if err := read.Uint16(&h.VersionNumber, r); err != nil {
+    return err
+  }
+  if err := read.Uint16(&h.Length, r); err != nil {
+    return err
+  }
+  if err := read.Uint32(&h.ExportTime, r); err != nil {
+    return err
+  }
+  if err := read.Uint32(&h.SequenceNumber, r); err != nil {
+    return err
+  }
+  if err := read.Uint32(&h.ObservationDomainID, r); err != nil {
+    return err
+  }
+
+  return nil
+}
+*/
+
+
 The message header contains the following fields:
 
 Version—Version of the flow record format exported in this message. The value of this field is 0x000a.
