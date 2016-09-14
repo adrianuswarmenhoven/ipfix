@@ -27,4 +27,14 @@ const (
 	//'Package internal' constants
 	ipfixMessageHeaderLength = 16 //Length of the message header. For calculations.
 	ipfixSetHeaderLength     = 4  // Length of a set header, For calculations.
+
+	//The Semantic field indicates the relationship among the different Information Element values within this Structured Data Information Element.
+	//Refer to IANA's "IPFIX Structured Data Types Semantics" registry.
+	NoneOf       = 0x00 //The "noneOf" structured data type semantic specifies that none of the elements are actual properties of the Data Record.	[RFC6313]
+	ExactlyOneOf = 0x01 //The "exactlyOneOf" structured data type semantic specifies that only a single element from the structured data is an actual property of the Data Record. This is equivalent to a logical XOR operation.	[RFC6313]
+	OneOrMoreOf  = 0x02 //The "oneOrMoreOf" structured data type semantic specifies that one or more elements from the list in the structured data are actual properties of the Data Record. This is equivalent to a logical OR operation.	[RFC6313]
+	AllOf        = 0x03 //The "allOf" structured data type semantic specifies that all of the list elements from the structured data are actual properties of the Data Record.	[RFC6313]
+	Ordered      = 0x04 //The "ordered" structured data type semantic specifies that elements from the list in the structured data are ordered.	[RFC6313]
+	Undefined    = 0xFF //The "undefined" structured data type semantic specifies that the semantic of the list elements is not specified and that, if a semantic exists, then it is up to the Collecting Process to draw its own conclusions. The "undefined" structured data type semantic is the default structured data type semantic.	[RFC6313]
+
 )

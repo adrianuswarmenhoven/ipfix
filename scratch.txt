@@ -2,6 +2,9 @@
 - Do not worry about content
 
 
+*** MAKE PROVISIONS FOR VARIABLE LENGTH TYPES!!!
+
+
 /*
 // Unmarshal a message header from a reader.
 func (h *MessageHeader) Unmarshal(r io.Reader) error {
@@ -25,6 +28,68 @@ func (h *MessageHeader) Unmarshal(r io.Reader) error {
 }
 */
 
+// Bytes translates a byte string to a go native type.
+func Bytes(bs []byte, t FieldType) interface{} {
+	if len(bs) < t.minLength() {
+		// Field is too short (corrupt) - return it uninterpreted.
+		return bs
+	}
+
+	switch t {
+	case Uint8:
+		return bs[0]
+	case Uint16:
+		return binary.BigEndian.Uint16(bs)
+	case Uint32:
+		return binary.BigEndian.Uint32(bs)
+	case Uint64:
+		switch len(bs) {
+		case 4:
+			return uint64(binary.BigEndian.Uint32(bs))
+		case 8:
+			return binary.BigEndian.Uint64(bs)
+		}
+	case Int8:
+		return int8(bs[0])
+	case Int16:
+		return int16(binary.BigEndian.Uint16(bs))
+	case Int32:
+		return int32(binary.BigEndian.Uint32(bs))
+	case Int64:
+		switch len(bs) {
+		case 4:
+			return int64(binary.BigEndian.Uint32(bs))
+		case 8:
+			return int64(binary.BigEndian.Uint64(bs))
+		}
+	case Float32:
+		return math.Float32frombits(binary.BigEndian.Uint32(bs))
+	case Float64:
+		return math.Float64frombits(binary.BigEndian.Uint64(bs))
+	case Boolean:
+		return bs[0] == 1
+	case Unknown, OctetArray:
+		return bs
+	case String:
+		return string(bs)
+	case MacAddress:
+		return net.HardwareAddr(bs)
+	case Ipv4Address, Ipv6Address:
+		return net.IP(bs)
+	case DateTimeSeconds:
+		return time.Unix(int64(binary.BigEndian.Uint32(bs)), 0)
+	case DateTimeMilliseconds:
+		unixTimeMs := int64(binary.BigEndian.Uint64(bs))
+		return time.Unix(0, 0).Add(time.Duration(unixTimeMs) * time.Millisecond)
+	case DateTimeMicroseconds:
+		unixTimeUs := int64(binary.BigEndian.Uint64(bs))
+		return time.Unix(0, 0).Add(time.Duration(unixTimeUs) * time.Microsecond)
+	case DateTimeNanoseconds:
+		unixTimeNs := int64(binary.BigEndian.Uint64(bs))
+		return time.Unix(0, 0).Add(time.Duration(unixTimeNs))
+	}
+	return bs
+}
 
 The message header contains the following fields:
 
