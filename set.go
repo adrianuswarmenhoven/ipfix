@@ -12,9 +12,9 @@ Each of these Sets consists of a Set Header and one or more records.
 
 // Set defines the Generic Set type
 type Set struct {
-	SetHeader SetHeader //Generic Set Header.
-	Records   []*Record //Various types of record, depending on the SetID value (or rather, type of IPFIX set)
-	Padding   []byte    //Optional padding bytes
+	SetID   uint16    //Set ID value identifies the Set.  A value of 2 is reserved for the Template Set.  A value of 3 is reserved for the Option Template Set.  All other values from 4 to 255 are reserved for future use. Values above 255 are used for Data Sets.
+	Records []*Record //Various types of record, depending on the SetID value (or rather, type of IPFIX set)
+	Padding uint16    //Optional padding bytes (only the number, the actual bytes will be added in encoding)
 }
 
 /* N.B. per Padding:
@@ -26,12 +26,6 @@ If padding of the IPFIX Message is desired in combination with very short record
 Because Template Sets are always 4-octet aligned by definition, padding is only needed in the case of other alignments, e.g., on 8-octet boundaries.
 */
 
-// SetHeader defines the Generic Set Header. Basically an ID and the size of the Set.
-type SetHeader struct {
-	SetID  uint16 //Set ID value identifies the Set.  A value of 2 is reserved for the Template Set.  A value of 3 is reserved for the Option Template Set.  All other values from 4 to 255 are reserved for future use. Values above 255 are used for Data Sets.
-	Length uint16 //Total length of the Set, in octets, including the Set Header, all records, and the optional padding.
-}
-
 // NewSet creates a new IPFIX Set with specified set ID
 func NewSet(setid uint16) (*Set, error) {
 	if setid < SetIDTemplate || (setid > SetIDOptionTemplate && setid < 256) {
@@ -39,29 +33,51 @@ func NewSet(setid uint16) (*Set, error) {
 	}
 
 	return &Set{
-		SetHeader: SetHeader{
-			SetID:  setid,
-			Length: uint16(0),
-		},
-		Records: []*Record{},
+		SetID:   setid,
+		Padding: uint16(0),
+		Records: make([]*Record, 0, 0),
 	}, nil
 }
 
-// Finalize inalizes the Set and calculates it's length.
-// The paddingboundary is the number of octets to align to, for example 8 for 8-octet boundaries.
-// If paddingboundary is greater than 0 then padding will be added to fill the set to that boundary.
-func (ipfixset *Set) Finalize(paddingboundary uint8) error {
-	//Calculate the length of the message
-	ipfixset.SetHeader.Length = ipfixSetHeaderLength
+// Len returns the size in octets of the Set
+func (ipfixset *Set) Len() uint16 {
+	setlen := uint16(4) //We start out with 2 bytes for ID and 2 bytes for length
 	for _, rec := range ipfixset.Records {
-		ipfixset.SetHeader.Length += (*rec).Len()
+		setlen += (*rec).Len()
 	}
-	//FIXME
-	if paddingboundary == 0 {
-		ipfixset.SetHeader.Length += 0
-	}
+	setlen += ipfixset.Padding
+	return setlen
+}
 
-	return fmt.Errorf("Not yet implemented properly!")
+// String returns the string representation of the Set
+func (ipfixset *Set) String() string {
+	retstring := fmt.Sprintf("set id=%d, ", ipfixset.SetID)
+	if ipfixset.Padding == 0 {
+		retstring += fmt.Sprintf("set length (without padding)=%d, \n", ipfixset.Len())
+	} else {
+		retstring += fmt.Sprintf("set length (padding=%d)=%d, \n", ipfixset.Padding, ipfixset.Len())
+	}
+	for _, rec := range ipfixset.Records {
+		retstring += (*rec).String() + "\n"
+	}
+	return retstring
+}
+
+// AddRecord adds a new record to this set
+func (ipfixset *Set) AddRecord(rec Record) error {
+	if int(rec.Len())+int(ipfixset.Len()) > 65535 {
+		return fmt.Errorf("Can not add record. Record size %d + Set Size %d > 65535", rec.Len(), ipfixset.Len())
+	}
+	ipfixset.Records = append(ipfixset.Records, &rec)
+	return nil
+}
+
+// Pad calculates the padding bytes.
+// The paddingboundary is the number of octets to align to, for example 8 for 8-octet boundaries.
+// If the result is greater than 0 then padding will be added to fill the set to that boundary.
+func (ipfixset *Set) Pad(paddingboundary uint16) {
+	//Calculate the length of the message
+	ipfixset.Padding = paddingboundary - (ipfixset.Len() % paddingboundary)
 }
 
 // MarshalBinary satisfies the encoding/BinaryMarshaler interface

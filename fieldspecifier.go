@@ -29,6 +29,20 @@ func NewFieldSpecifier(enterpriseid uint32, informationelementid, fieldlength ui
 	}, nil
 }
 
+// String returns the string representation of the Field Specifier
+func (fsp FieldSpecifier) String() string {
+	retstr := ""
+	if fsp.E {
+		retstr = fmt.Sprintf("enterprise bit=yes, enterprise number=%d, information element identifier=%d, field length=%d, ", fsp.EnterpriseNumber, fsp.InformationElementIdentifier, fsp.FieldLength)
+	} else {
+		retstr = fmt.Sprintf("enterprise bit=no, information element identifier=%d, field length=%d, ", fsp.InformationElementIdentifier, fsp.FieldLength)
+	}
+	if fsp.FieldLength == VariableLength {
+		return retstr + "variable length=yes"
+	}
+	return retstr + "variable length=no"
+}
+
 // Len returns the length of the field specifier, in octets.
 func (fsp FieldSpecifier) Len() uint16 {
 	if fsp.E {

@@ -31,16 +31,11 @@ Applying the sampling function first, followed by the filtering function, would 
 // TemplateRecord defines the structure of a (Options) Template Record
 // If no Scope Fields are present then it is a regular Template Record
 type TemplateRecord struct {
-	Header               TemplateRecordHeader
+	TemplateID uint16 //Each of the newly generated Template Records is given a unique Template ID.  This uniqueness is local to the Transport Session and Observation Domain that generated the Template ID. Template IDs 0-255 are reserved for Template Sets, Options Template Sets, and other reserved Sets yet to be created.  Template IDs of Data Sets are numbered from 256 to 65535.  There are no constraints regarding the order of the Template ID allocation.
+	//ScopeFieldCount      uint16
+	//FieldCount           uint16 //Number of fields in this Template Record.
 	ScopeFieldSpecifiers []FieldSpecifier
 	FieldSpecifiers      []FieldSpecifier
-}
-
-// TemplateRecordHeader defines the structure of a (Options) Template Record Header
-type TemplateRecordHeader struct {
-	TemplateID      uint16 //Each of the newly generated Template Records is given a unique Template ID.  This uniqueness is local to the Transport Session and Observation Domain that generated the Template ID. Template IDs 0-255 are reserved for Template Sets, Options Template Sets, and other reserved Sets yet to be created.  Template IDs of Data Sets are numbered from 256 to 65535.  There are no constraints regarding the order of the Template ID allocation.
-	ScopeFieldCount uint16 //Number of scope fields in ths template record. If 0 then this is a regular template
-	FieldCount      uint16 //Number of fields in this Template Record.
 }
 
 // NewTemplateRecord returns a new *TemplateRecord that has the given templateid and 0 Field Specifiers.
@@ -50,34 +45,47 @@ func NewTemplateRecord(templateid uint16) (*TemplateRecord, error) {
 		return nil, fmt.Errorf("Invalid template id. Must be >=256 but got %d", templateid)
 	}
 	return &TemplateRecord{
-		Header: TemplateRecordHeader{
-			TemplateID:      templateid,
-			ScopeFieldCount: 0,
-			FieldCount:      0,
-		},
+		TemplateID:           templateid,
 		ScopeFieldSpecifiers: make([]FieldSpecifier, 0, 0),
 		FieldSpecifiers:      make([]FieldSpecifier, 0, 0),
 	}, nil
 }
 
+// String returns the string representation of the Template Record
+func (tmplrec *TemplateRecord) String() string {
+	retstring := ""
+	if len(tmplrec.ScopeFieldSpecifiers) == 0 {
+		retstring += fmt.Sprintf("type=template, ")
+	} else {
+		retstring += fmt.Sprintf("type=options template, scope field count=%d:\n", len(tmplrec.ScopeFieldSpecifiers))
+		for _, sfs := range tmplrec.ScopeFieldSpecifiers {
+			retstring += "\t" + sfs.String() + "\n"
+		}
+	}
+	retstring += fmt.Sprintf("field count=%d:\n", len(tmplrec.FieldSpecifiers))
+	for _, fs := range tmplrec.FieldSpecifiers {
+		retstring += "\t" + fs.String() + "\n"
+	}
+	return retstring
+}
+
 //AddScopeSpecifier adds a Scope Field Specifier to the record
 func (tmplrec *TemplateRecord) AddScopeSpecifier(fsp FieldSpecifier) *TemplateRecord {
 	tmplrec.FieldSpecifiers = append(tmplrec.FieldSpecifiers, fsp)
-	tmplrec.Header.ScopeFieldCount++
 	return tmplrec
 }
 
 //AddSpecifier adds a Field Specifier to the record
 func (tmplrec *TemplateRecord) AddSpecifier(fsp FieldSpecifier) *TemplateRecord {
 	tmplrec.FieldSpecifiers = append(tmplrec.FieldSpecifiers, fsp)
-	tmplrec.Header.FieldCount++
 	return tmplrec
 }
 
 // Len returns the size in octets of the template record
 func (tmplrec *TemplateRecord) Len() uint16 {
-	reclen := uint16(4) //header is 4 bytes
+	reclen := uint16(4) //basic header is 4 bytes
 	for _, rec := range tmplrec.ScopeFieldSpecifiers {
+		reclen += 2 //we need some space in the header for the scope fields
 		reclen += rec.Len()
 	}
 	for _, rec := range tmplrec.FieldSpecifiers {
@@ -89,7 +97,7 @@ func (tmplrec *TemplateRecord) Len() uint16 {
 // MarshalBinary satisfies the encoding/BinaryMarshaler interface
 // BUG(aw): NOT IMPLEMENTED
 func (tmplrec *TemplateRecord) MarshalBinary() (data []byte, err error) {
-	if tmplrec.Header.FieldCount < 1 || len(tmplrec.FieldSpecifiers) < 1 {
+	if len(tmplrec.FieldSpecifiers) < 1 {
 		return nil, fmt.Errorf("Can not marshal record, must have at least one Field Specifier")
 	}
 	return nil, fmt.Errorf("Not yet implemented!")

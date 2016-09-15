@@ -434,6 +434,7 @@ func (fv FieldValueIPv4Address) Len() uint16 {
 /* */
 // FieldValueIPv6Address , "ipv6Address" represents an IPv6 address.
 type FieldValueIPv6Address struct {
+	Value net.IP
 }
 
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
@@ -453,9 +454,8 @@ func (fv FieldValueIPv6Address) Len() uint16 {
 
 /* */
 // FieldValueBasicList , "basicList" supports structured data export as described in [RFC6313];
-//see Section 4.5.1 of that document for encoding details.
 type FieldValueBasicList struct {
-	Value *BasicList
+	Value BasicList
 }
 
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
@@ -475,11 +475,42 @@ func (fv FieldValueBasicList) Len() uint16 {
 
 /* */
 // FieldValueSubTemplateList , "subTemplateList" supports structured data export as described in [RFC6313];
-//see Section 4.5.2 of that document for encoding details.
 type FieldValueSubTemplateList struct {
+	Value SubTemplateList
 }
 
+// MarshalBinary returns the Network Byte Order byte representation of this Field Value
+func (fv FieldValueSubTemplateList) MarshalBinary() (data []byte, err error) {
+	return nil, fmt.Errorf("Not yet implemented!")
+}
+
+// UnmarshalBinary fills the value from Network Byte Order byte representation
+func (fv FieldValueSubTemplateList) UnmarshalBinary(data []byte) error {
+	return fmt.Errorf("Not yet implemented!")
+}
+
+// Len returns the number of octets this FieldValue is wide
+func (fv FieldValueSubTemplateList) Len() uint16 {
+	return fv.Value.Len()
+}
+
+/* */
 // FieldValueSubTemplateMultiList , "subTemplateMultiList" supports structured data export as described in [RFC6313];
-//see Section 4.5.3 of that document for encoding details.
 type FieldValueSubTemplateMultiList struct {
+	Value SubTemplateMultiList
+}
+
+// MarshalBinary returns the Network Byte Order byte representation of this Field Value
+func (fv FieldValueSubTemplateMultiList) MarshalBinary() (data []byte, err error) {
+	return nil, fmt.Errorf("Not yet implemented!")
+}
+
+// UnmarshalBinary fills the value from Network Byte Order byte representation
+func (fv FieldValueSubTemplateMultiList) UnmarshalBinary(data []byte) error {
+	return fmt.Errorf("Not yet implemented!")
+}
+
+// Len returns the number of octets this FieldValue is wide
+func (fv FieldValueSubTemplateMultiList) Len() uint16 {
+	return fv.Value.Len()
 }
