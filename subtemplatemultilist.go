@@ -64,7 +64,7 @@ func NewSubTemplateData(templateid uint16) (*SubTemplateData, error) {
 
 //Len returns the total length of the Data Records encoding for the Template ID previously specified, including the two bytes for the Template ID and the two bytes for the Data Records Length field itself.
 func (stld SubTemplateData) Len() uint16 {
-	stldlen := uint16(4)
+	stldlen := uint16(4) //two for id, two for length
 	for _, listitem := range stld.FieldValues {
 		stldlen += listitem.Len()
 	}
