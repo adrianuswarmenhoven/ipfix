@@ -2,6 +2,8 @@ package ipfixmessage
 
 import "fmt"
 
+//BasicList represents a list of zero or more instances of any Information Element, primarily used for single-valued data types.
+//Examples include a list of port numbers, a list of interface indexes, a list of AS in a BGP AS-PATH, etc.
 type BasicList struct {
 	Semantic                     uint8  //one of: SemanticsNoneOf, ExactlyOneOf, OneOrMoreOf, AllOf, Ordered or Undefined
 	E                            bool   //Enterprise bit.  This is the first bit of the Field Specifier.  If this bit is zero, the Information Element Identifier identifies an IETF-specified Information Element, and the four-octet Enterprise Number field MUST NOT be present.  If this bit is one the Information Element identifier identifies an enterprise-specific Information Element, and the Enterprise Number filed MUST be present.
@@ -26,6 +28,7 @@ func NewBasicList(semantic uint8, enterpriseid uint32, informationelementid, fie
 		InformationElementIdentifier: informationelementid,
 		FieldLength:                  fieldlength,
 		EnterpriseNumber:             enterpriseid,
+		FieldValues:                  make([]FieldValue, 0, 0),
 	}, nil
 }
 
@@ -33,9 +36,9 @@ func NewBasicList(semantic uint8, enterpriseid uint32, informationelementid, fie
 func (blst *BasicList) Len() uint16 {
 	bllen := uint16(0)
 	if blst.E {
-		bllen = 8 //If the Enterprise Bit is set, we have to add the Enterprise Number
+		bllen = 9 //If the Enterprise Bit is set, we have to add the Enterprise Number
 	} else {
-		bllen = 4
+		bllen = 5
 	}
 	for _, listitem := range blst.FieldValues {
 		bllen += listitem.Len()
