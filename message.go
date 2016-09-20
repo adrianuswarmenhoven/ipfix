@@ -60,21 +60,21 @@ func (ipfixmsg *Message) Len() uint16 {
 	return msglen
 }
 
-// ODID sets the observation domain id on the message.
+// SetODID sets the observation domain id on the message.
 func (ipfixmsg *Message) SetODID(odid uint32) *Message {
 	ipfixmsg.ObservationDomainID = odid
 
 	return ipfixmsg
 }
 
-// ExportTime sets the export time on the message.
+// SetExportTime sets the export time on the message.
 func (ipfixmsg *Message) SetExportTime(exporttime time.Time) *Message {
 	ipfixmsg.ExportTime = exporttime
 
 	return ipfixmsg
 }
 
-// SequenceNumber sets the sequence number on the message.
+// SetSequenceNumber sets the sequence number on the message.
 func (ipfixmsg *Message) SetSequenceNumber(sequencenumber uint32) *Message {
 	ipfixmsg.SequenceNumber = sequencenumber
 
