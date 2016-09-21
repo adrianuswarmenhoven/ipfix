@@ -29,6 +29,11 @@ func marshalBinarySingleValue(val interface{}) ([]byte, error) {
 	return nil, err
 }
 
+func unmarshalBinaryOctets(data []byte, val interface{}) error {
+	buf := bytes.NewReader(data)
+	return binary.Read(buf, binary.BigEndian, val)
+}
+
 /* */
 // FieldValueUnsigned8 , "unsigned8" represents a non-negative integer value in the range of 0 to 255.
 type FieldValueUnsigned8 struct {
@@ -450,12 +455,26 @@ type FieldValueBoolean struct {
 
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
 func (fv *FieldValueBoolean) MarshalBinary() ([]byte, error) {
-	return nil, fmt.Errorf("Not yet implemented!")
+	if fv.value {
+		return marshalBinarySingleValue(uint8(1))
+	}
+	return marshalBinarySingleValue(uint8(2))
 }
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
 func (fv *FieldValueBoolean) UnmarshalBinary(data []byte) error {
-	return fmt.Errorf("Not yet implemented!")
+	if len(data) < 1 {
+		return fmt.Errorf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data))
+	}
+	switch data[0] {
+	case 1:
+		fv.value = true
+	case 2:
+		fv.value = false
+	default:
+		return fmt.Errorf("Invalid encoded value for boolean: %d, must be either 1 or 2", data[0])
+	}
+	return nil
 }
 
 // Len returns the number of octets this FieldValue is wide
@@ -468,6 +487,17 @@ func (fv *FieldValueBoolean) Value() interface{} {
 	return fv.value
 }
 
+// Set sets the FieldValue's value. Will return an error if the type is incorrect.
+func (fv *FieldValueBoolean) Set(val interface{}) error {
+	switch val.(type) {
+	case bool:
+		fv.value = val.(bool)
+	default:
+		return fmt.Errorf("Invalid type for %s", reflect.TypeOf(fv))
+	}
+	return nil
+}
+
 /* */
 // FieldValueMacAddress , "macAddress" represents a MAC-48 address as defined in [IEEE.802-3.2012].
 type FieldValueMacAddress struct {
@@ -476,12 +506,15 @@ type FieldValueMacAddress struct {
 
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
 func (fv *FieldValueMacAddress) MarshalBinary() ([]byte, error) {
-	return nil, fmt.Errorf("Not yet implemented!")
+	return marshalBinarySingleValue(fv.value)
 }
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
 func (fv *FieldValueMacAddress) UnmarshalBinary(data []byte) error {
-	return fmt.Errorf("Not yet implemented!")
+	if len(data) < 6 {
+		return fmt.Errorf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data))
+	}
+	return unmarshalBinaryOctets(data, &fv.value)
 }
 
 // Len returns the number of octets this FieldValue is wide
@@ -492,6 +525,17 @@ func (fv *FieldValueMacAddress) Len() uint16 {
 // Value returns FieldValue's value
 func (fv *FieldValueMacAddress) Value() interface{} {
 	return fv.value
+}
+
+// Set sets the FieldValue's value. Will return an error if the type is incorrect.
+func (fv *FieldValueMacAddress) Set(val interface{}) error {
+	switch val.(type) {
+	case net.HardwareAddr:
+		fv.value = val.(net.HardwareAddr)
+	default:
+		return fmt.Errorf("Invalid type for %s", reflect.TypeOf(fv))
+	}
+	return nil
 }
 
 /* */

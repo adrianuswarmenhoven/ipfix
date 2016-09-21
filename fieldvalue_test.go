@@ -1,6 +1,7 @@
 package ipfixmessage
 
 import (
+	"fmt"
 	"math"
 	"net"
 	"reflect"
@@ -56,35 +57,42 @@ func TestFieldValueValueGoTypes(t *testing.T) {
 }
 
 type fieldvalueSetGetTestcase struct {
-	TestVal  FieldValue
-	CompVal  interface{}
-	MustFail bool
+	TestVal     FieldValue
+	CompVal     interface{}
+	MustFail    bool
+	ByteCompare bool
 }
 
 func TestFieldValueSetGet(t *testing.T) {
 	var testset = []fieldvalueSetGetTestcase{
-		0: {TestVal: &FieldValueUnsigned8{value: 0}, CompVal: uint16(42), MustFail: true},
-		1: {TestVal: &FieldValueUnsigned8{value: 0}, CompVal: uint8(42), MustFail: false},
-		2: {TestVal: &FieldValueUnsigned16{value: 0}, CompVal: uint8(42), MustFail: true},
-		3: {TestVal: &FieldValueUnsigned16{value: 0}, CompVal: uint16(42), MustFail: false},
-		4: {TestVal: &FieldValueUnsigned32{value: 0}, CompVal: uint16(42), MustFail: true},
-		5: {TestVal: &FieldValueUnsigned32{value: 0}, CompVal: uint32(42), MustFail: false},
-		6: {TestVal: &FieldValueUnsigned64{value: 0}, CompVal: uint16(42), MustFail: true},
-		7: {TestVal: &FieldValueUnsigned64{value: 0}, CompVal: uint64(42), MustFail: false},
+		0: {TestVal: &FieldValueUnsigned8{value: 0}, CompVal: uint16(42), MustFail: true, ByteCompare: false},
+		1: {TestVal: &FieldValueUnsigned8{value: 0}, CompVal: uint8(42), MustFail: false, ByteCompare: false},
+		2: {TestVal: &FieldValueUnsigned16{value: 0}, CompVal: uint8(42), MustFail: true, ByteCompare: false},
+		3: {TestVal: &FieldValueUnsigned16{value: 0}, CompVal: uint16(42), MustFail: false, ByteCompare: false},
+		4: {TestVal: &FieldValueUnsigned32{value: 0}, CompVal: uint16(42), MustFail: true, ByteCompare: false},
+		5: {TestVal: &FieldValueUnsigned32{value: 0}, CompVal: uint32(42), MustFail: false, ByteCompare: false},
+		6: {TestVal: &FieldValueUnsigned64{value: 0}, CompVal: uint16(42), MustFail: true, ByteCompare: false},
+		7: {TestVal: &FieldValueUnsigned64{value: 0}, CompVal: uint64(42), MustFail: false, ByteCompare: false},
 
-		8:  {TestVal: &FieldValueSigned8{value: 0}, CompVal: int16(42), MustFail: true},
-		9:  {TestVal: &FieldValueSigned8{value: 0}, CompVal: int8(42), MustFail: false},
-		10: {TestVal: &FieldValueSigned16{value: 0}, CompVal: int8(42), MustFail: true},
-		11: {TestVal: &FieldValueSigned16{value: 0}, CompVal: int16(42), MustFail: false},
-		12: {TestVal: &FieldValueSigned32{value: 0}, CompVal: int16(42), MustFail: true},
-		13: {TestVal: &FieldValueSigned32{value: 0}, CompVal: int32(42), MustFail: false},
-		14: {TestVal: &FieldValueSigned64{value: 0}, CompVal: int16(42), MustFail: true},
-		15: {TestVal: &FieldValueSigned64{value: 0}, CompVal: int64(42), MustFail: false},
+		8:  {TestVal: &FieldValueSigned8{value: 0}, CompVal: int16(42), MustFail: true, ByteCompare: false},
+		9:  {TestVal: &FieldValueSigned8{value: 0}, CompVal: int8(42), MustFail: false, ByteCompare: false},
+		10: {TestVal: &FieldValueSigned16{value: 0}, CompVal: int8(42), MustFail: true, ByteCompare: false},
+		11: {TestVal: &FieldValueSigned16{value: 0}, CompVal: int16(42), MustFail: false, ByteCompare: false},
+		12: {TestVal: &FieldValueSigned32{value: 0}, CompVal: int16(42), MustFail: true, ByteCompare: false},
+		13: {TestVal: &FieldValueSigned32{value: 0}, CompVal: int32(42), MustFail: false, ByteCompare: false},
+		14: {TestVal: &FieldValueSigned64{value: 0}, CompVal: int16(42), MustFail: true, ByteCompare: false},
+		15: {TestVal: &FieldValueSigned64{value: 0}, CompVal: int64(42), MustFail: false, ByteCompare: false},
 
-		16: {TestVal: &FieldValueFloat32{value: 0}, CompVal: float64(math.Phi), MustFail: true},
-		17: {TestVal: &FieldValueFloat32{value: 0}, CompVal: float32(math.Phi), MustFail: false},
-		18: {TestVal: &FieldValueFloat64{value: 0}, CompVal: float32(math.Pi), MustFail: true},
-		19: {TestVal: &FieldValueFloat64{value: 0}, CompVal: float64(math.Pi), MustFail: false},
+		16: {TestVal: &FieldValueFloat32{value: 0}, CompVal: float64(math.Phi), MustFail: true, ByteCompare: false},
+		17: {TestVal: &FieldValueFloat32{value: 0}, CompVal: float32(math.Phi), MustFail: false, ByteCompare: false},
+		18: {TestVal: &FieldValueFloat64{value: 0}, CompVal: float32(math.Pi), MustFail: true, ByteCompare: false},
+		19: {TestVal: &FieldValueFloat64{value: 0}, CompVal: float64(math.Pi), MustFail: false, ByteCompare: false},
+
+		20: {TestVal: &FieldValueBoolean{value: false}, CompVal: int32(4), MustFail: true, ByteCompare: false},
+		21: {TestVal: &FieldValueBoolean{value: false}, CompVal: bool(true), MustFail: false, ByteCompare: false},
+
+		22: {TestVal: &FieldValueMacAddress{value: net.HardwareAddr{0x01, 0x23, 0x45, 0x67, 0x89, 0xab}}, CompVal: int32(4), MustFail: true, ByteCompare: true},
+		23: {TestVal: &FieldValueMacAddress{value: net.HardwareAddr{0x00, 0x00, 0x00, 0x00, 0x00, 0x00}}, CompVal: net.HardwareAddr{0x01, 0x23, 0x45, 0x67, 0x89, 0xab}, MustFail: false, ByteCompare: true},
 	}
 
 	for _, testcase := range testset {
@@ -92,8 +100,16 @@ func TestFieldValueSetGet(t *testing.T) {
 		if (err != nil) != testcase.MustFail {
 			t.Errorf("Testcase did not react correctly. Wanted fail(%v) but got fail(%v) for testcase %#v", testcase.MustFail, (err != nil), testcase)
 		}
-		if !testcase.MustFail && testcase.TestVal.Value() != testcase.CompVal {
-			t.Errorf("Wrong value returned. Wanted %d but got %d for testcase %#v", testcase.CompVal, testcase.TestVal.Value(), testcase)
+		if !testcase.MustFail {
+			if !testcase.ByteCompare {
+				if testcase.TestVal.Value() != testcase.CompVal {
+					t.Errorf("Wrong value returned. Wanted %d but got %d for testcase %#v", testcase.CompVal, testcase.TestVal.Value(), testcase)
+				}
+			} else {
+				if fmt.Sprintf("%v", testcase.TestVal.Value()) != fmt.Sprintf("%v", testcase.CompVal) {
+					t.Errorf("Wrong value returned. Wanted %v but got %v for testcase %#v", testcase.CompVal, testcase.TestVal.Value(), testcase)
+				}
+			}
 		}
 	}
 }
@@ -128,6 +144,9 @@ func TestFieldValueMarshalUnmarshal(t *testing.T) {
 		17: {SourceVal: &FieldValueFloat32{value: math.SmallestNonzeroFloat32}, DestVal: &FieldValueFloat32{value: 0}, CompVal: float32(math.SmallestNonzeroFloat32)},
 		18: {SourceVal: &FieldValueFloat64{value: math.MaxFloat64}, DestVal: &FieldValueFloat64{value: 0}, CompVal: float64(math.MaxFloat64)},
 		19: {SourceVal: &FieldValueFloat64{value: math.SmallestNonzeroFloat64}, DestVal: &FieldValueFloat64{value: 0}, CompVal: float64(math.SmallestNonzeroFloat64)},
+
+		20: {SourceVal: &FieldValueBoolean{value: false}, DestVal: &FieldValueBoolean{value: true}, CompVal: bool(false)},
+		21: {SourceVal: &FieldValueBoolean{value: true}, DestVal: &FieldValueBoolean{value: false}, CompVal: bool(true)},
 	}
 
 	for _, testcase := range testset {
