@@ -1,226 +1,442 @@
 package ipfixmessage
 
 import (
+	"bytes"
+	"encoding/binary"
 	"fmt"
+	"math"
 	"net"
+	"reflect"
 	"time"
 )
 
 // FieldValue Interface definition
+// Note that all implementations must be pointer receivers so that unmarshal can change the value
 type FieldValue interface {
-	MarshalBinary() (data []byte, err error) // Each FieldValue *must* implement the encoding/BinaryMarshaler interface
-	UnmarshalBinary(data []byte) error       // Each FieldValue *must* implement the encoding/BinaryUnmarshaler interface
-	Len() uint16                             // The size in Octets of this record, when Marshalled
+	MarshalBinary() ([]byte, error)    // Each FieldValue *must* implement the encoding/BinaryMarshaler interface
+	UnmarshalBinary(data []byte) error // Each FieldValue *must* implement the encoding/BinaryUnmarshaler interface
+	Len() uint16                       // The size in Octets of this record, when Marshalled
+	Value() interface{}                // Returns the value of this fieldvalue
+	Set(val interface{}) error         // Sets the value of this FieldValue
+}
+
+func marshalBinarySingleValue(val interface{}) ([]byte, error) {
+	buf := new(bytes.Buffer) //should get from pool?
+	err := binary.Write(buf, binary.BigEndian, val)
+	if err == nil {
+		return buf.Bytes(), nil
+	}
+	return nil, err
 }
 
 /* */
 // FieldValueUnsigned8 , "unsigned8" represents a non-negative integer value in the range of 0 to 255.
 type FieldValueUnsigned8 struct {
-	Value uint8
+	value uint8
 }
 
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
-func (fv FieldValueUnsigned8) MarshalBinary() (data []byte, err error) {
-	return nil, fmt.Errorf("Not yet implemented!")
+func (fv *FieldValueUnsigned8) MarshalBinary() ([]byte, error) {
+	return marshalBinarySingleValue(fv.value)
 }
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
-func (fv FieldValueUnsigned8) UnmarshalBinary(data []byte) error {
-	return fmt.Errorf("Not yet implemented!")
+func (fv *FieldValueUnsigned8) UnmarshalBinary(data []byte) error {
+	if len(data) < 1 {
+		return fmt.Errorf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data))
+	}
+	fv.value = data[0]
+	return nil
 }
 
 // Len returns the number of octets this FieldValue is wide
-func (fv FieldValueUnsigned8) Len() uint16 {
+func (fv *FieldValueUnsigned8) Len() uint16 {
 	return 1
+}
+
+// Value returns FieldValue's value
+func (fv *FieldValueUnsigned8) Value() interface{} {
+	return fv.value
+}
+
+// Set sets the FieldValue's value. Will return an error if the type is incorrect.
+func (fv *FieldValueUnsigned8) Set(val interface{}) error {
+	switch val.(type) {
+	case uint8:
+		fv.value = val.(uint8)
+	default:
+		return fmt.Errorf("Invalid type for %s", reflect.TypeOf(fv))
+	}
+	return nil
 }
 
 /* */
 // FieldValueUnsigned16 , "unsigned16" represents a non-negative integer value in the range of 0 to 65535.
 type FieldValueUnsigned16 struct {
-	Value uint16
+	value uint16
 }
 
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
-func (fv FieldValueUnsigned16) MarshalBinary() (data []byte, err error) {
-	return nil, fmt.Errorf("Not yet implemented!")
+func (fv *FieldValueUnsigned16) MarshalBinary() ([]byte, error) {
+	return marshalBinarySingleValue(fv.value)
 }
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
-func (fv FieldValueUnsigned16) UnmarshalBinary(data []byte) error {
-	return fmt.Errorf("Not yet implemented!")
+func (fv *FieldValueUnsigned16) UnmarshalBinary(data []byte) error {
+	if len(data) < 2 {
+		return fmt.Errorf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data))
+	}
+	fv.value = binary.BigEndian.Uint16(data)
+	return nil
 }
 
 // Len returns the number of octets this FieldValue is wide
-func (fv FieldValueUnsigned16) Len() uint16 {
+func (fv *FieldValueUnsigned16) Len() uint16 {
 	return 2
+}
+
+// Value returns FieldValue's value
+func (fv *FieldValueUnsigned16) Value() interface{} {
+	return fv.value
+}
+
+// Set sets the FieldValue's value. Will return an error if the type is incorrect.
+func (fv *FieldValueUnsigned16) Set(val interface{}) error {
+	switch val.(type) {
+	case uint16:
+		fv.value = val.(uint16)
+	default:
+		return fmt.Errorf("Invalid type for %s", reflect.TypeOf(fv))
+	}
+	return nil
 }
 
 /* */
 // FieldValueUnsigned32 , "unsigned32" represents a non-negative integer value in the range of 0 to 4294967295
 type FieldValueUnsigned32 struct {
-	Value uint32
+	value uint32
 }
 
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
-func (fv FieldValueUnsigned32) MarshalBinary() (data []byte, err error) {
-	return nil, fmt.Errorf("Not yet implemented!")
+func (fv *FieldValueUnsigned32) MarshalBinary() ([]byte, error) {
+	return marshalBinarySingleValue(fv.value)
 }
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
-func (fv FieldValueUnsigned32) UnmarshalBinary(data []byte) error {
-	return fmt.Errorf("Not yet implemented!")
+func (fv *FieldValueUnsigned32) UnmarshalBinary(data []byte) error {
+	if len(data) < 4 {
+		return fmt.Errorf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data))
+	}
+	fv.value = binary.BigEndian.Uint32(data)
+	return nil
 }
 
 // Len returns the number of octets this FieldValue is wide
-func (fv FieldValueUnsigned32) Len() uint16 {
+func (fv *FieldValueUnsigned32) Len() uint16 {
 	return 4
+}
+
+// Value returns FieldValue's value
+func (fv *FieldValueUnsigned32) Value() interface{} {
+	return fv.value
+}
+
+// Set sets the FieldValue's value. Will return an error if the type is incorrect.
+func (fv *FieldValueUnsigned32) Set(val interface{}) error {
+	switch val.(type) {
+	case uint32:
+		fv.value = val.(uint32)
+	default:
+		return fmt.Errorf("Invalid type for %s", reflect.TypeOf(fv))
+	}
+	return nil
 }
 
 /* */
 // FieldValueUnsigned64 , "unsigned64" represents a non-negative integer value in the range of 0 to 18446744073709551615
 type FieldValueUnsigned64 struct {
-	Value uint64
+	value uint64
 }
 
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
-func (fv FieldValueUnsigned64) MarshalBinary() (data []byte, err error) {
-	return nil, fmt.Errorf("Not yet implemented!")
+func (fv *FieldValueUnsigned64) MarshalBinary() ([]byte, error) {
+	return marshalBinarySingleValue(fv.value)
 }
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
-func (fv FieldValueUnsigned64) UnmarshalBinary(data []byte) error {
-	return fmt.Errorf("Not yet implemented!")
+func (fv *FieldValueUnsigned64) UnmarshalBinary(data []byte) error {
+	if len(data) < 8 {
+		return fmt.Errorf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data))
+	}
+	fv.value = binary.BigEndian.Uint64(data)
+	return nil
 }
 
 // Len returns the number of octets this FieldValue is wide
-func (fv FieldValueUnsigned64) Len() uint16 {
+func (fv *FieldValueUnsigned64) Len() uint16 {
 	return 8
+}
+
+// Value returns FieldValue's value
+func (fv *FieldValueUnsigned64) Value() interface{} {
+	return fv.value
+}
+
+// Set sets the FieldValue's value. Will return an error if the type is incorrect.
+func (fv *FieldValueUnsigned64) Set(val interface{}) error {
+	switch val.(type) {
+	case uint64:
+		fv.value = val.(uint64)
+	default:
+		return fmt.Errorf("Invalid type for %s", reflect.TypeOf(fv))
+	}
+	return nil
 }
 
 /* */
 // FieldValueSigned8 , "signed8" represents an integer value in the range of -128 to 127
 type FieldValueSigned8 struct {
-	Value int8
+	value int8
 }
 
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
-func (fv FieldValueSigned8) MarshalBinary() (data []byte, err error) {
-	return nil, fmt.Errorf("Not yet implemented!")
+func (fv *FieldValueSigned8) MarshalBinary() ([]byte, error) {
+	return marshalBinarySingleValue(fv.value)
 }
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
-func (fv FieldValueSigned8) UnmarshalBinary(data []byte) error {
-	return fmt.Errorf("Not yet implemented!")
+func (fv *FieldValueSigned8) UnmarshalBinary(data []byte) error {
+	if len(data) < 1 {
+		return fmt.Errorf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data))
+	}
+	fv.value = int8(data[0])
+	return nil
 }
 
 // Len returns the number of octets this FieldValue is wide
-func (fv FieldValueSigned8) Len() uint16 {
+func (fv *FieldValueSigned8) Len() uint16 {
 	return 1
+}
+
+// Value returns FieldValue's value
+func (fv *FieldValueSigned8) Value() interface{} {
+	return fv.value
+}
+
+// Set sets the FieldValue's value. Will return an error if the type is incorrect.
+func (fv *FieldValueSigned8) Set(val interface{}) error {
+	switch val.(type) {
+	case int8:
+		fv.value = val.(int8)
+	default:
+		return fmt.Errorf("Invalid type for %s", reflect.TypeOf(fv))
+	}
+	return nil
 }
 
 /* */
 // FieldValueSigned16 , "signed16" represents an integer value in the range of -32768 to 32767.
 type FieldValueSigned16 struct {
-	Value int16
+	value int16
 }
 
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
-func (fv FieldValueSigned16) MarshalBinary() (data []byte, err error) {
-	return nil, fmt.Errorf("Not yet implemented!")
+func (fv *FieldValueSigned16) MarshalBinary() ([]byte, error) {
+	return marshalBinarySingleValue(fv.value)
 }
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
-func (fv FieldValueSigned16) UnmarshalBinary(data []byte) error {
-	return fmt.Errorf("Not yet implemented!")
+func (fv *FieldValueSigned16) UnmarshalBinary(data []byte) error {
+	if len(data) < 2 {
+		return fmt.Errorf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data))
+	}
+	fv.value = int16(binary.BigEndian.Uint16(data))
+	return nil
 }
 
 // Len returns the number of octets this FieldValue is wide
-func (fv FieldValueSigned16) Len() uint16 {
+func (fv *FieldValueSigned16) Len() uint16 {
 	return 2
+}
+
+// Value returns FieldValue's value
+func (fv *FieldValueSigned16) Value() interface{} {
+	return fv.value
+}
+
+// Set sets the FieldValue's value. Will return an error if the type is incorrect.
+func (fv *FieldValueSigned16) Set(val interface{}) error {
+	switch val.(type) {
+	case int16:
+		fv.value = val.(int16)
+	default:
+		return fmt.Errorf("Invalid type for %s", reflect.TypeOf(fv))
+	}
+	return nil
 }
 
 /* */
 // FieldValueSigned32 , "signed32" represents an integer value in the range of -2147483648 to 2147483647.
 type FieldValueSigned32 struct {
-	Value int32
+	value int32
 }
 
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
-func (fv FieldValueSigned32) MarshalBinary() (data []byte, err error) {
-	return nil, fmt.Errorf("Not yet implemented!")
+func (fv *FieldValueSigned32) MarshalBinary() ([]byte, error) {
+	return marshalBinarySingleValue(fv.value)
 }
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
-func (fv FieldValueSigned32) UnmarshalBinary(data []byte) error {
-	return fmt.Errorf("Not yet implemented!")
+func (fv *FieldValueSigned32) UnmarshalBinary(data []byte) error {
+	if len(data) < 4 {
+		return fmt.Errorf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data))
+	}
+	fv.value = int32(binary.BigEndian.Uint32(data))
+	return nil
 }
 
 // Len returns the number of octets this FieldValue is wide
-func (fv FieldValueSigned32) Len() uint16 {
+func (fv *FieldValueSigned32) Len() uint16 {
 	return 4
+}
+
+// Value returns FieldValue's value
+func (fv *FieldValueSigned32) Value() interface{} {
+	return fv.value
+}
+
+// Set sets the FieldValue's value. Will return an error if the type is incorrect.
+func (fv *FieldValueSigned32) Set(val interface{}) error {
+	switch val.(type) {
+	case int32:
+		fv.value = val.(int32)
+	default:
+		return fmt.Errorf("Invalid type for %s", reflect.TypeOf(fv))
+	}
+	return nil
 }
 
 /* */
 // FieldValueSigned64 , "signed64" represents an integer value in the range of -9223372036854775808 to 9223372036854775807.
 type FieldValueSigned64 struct {
-	Value int64
+	value int64
 }
 
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
-func (fv FieldValueSigned64) MarshalBinary() (data []byte, err error) {
-	return nil, fmt.Errorf("Not yet implemented!")
+func (fv *FieldValueSigned64) MarshalBinary() ([]byte, error) {
+	return marshalBinarySingleValue(fv.value)
 }
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
-func (fv FieldValueSigned64) UnmarshalBinary(data []byte) error {
-	return fmt.Errorf("Not yet implemented!")
+func (fv *FieldValueSigned64) UnmarshalBinary(data []byte) error {
+	if len(data) < 8 {
+		return fmt.Errorf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data))
+	}
+	fv.value = int64(binary.BigEndian.Uint64(data))
+	return nil
 }
 
 // Len returns the number of octets this FieldValue is wide
-func (fv FieldValueSigned64) Len() uint16 {
+func (fv *FieldValueSigned64) Len() uint16 {
 	return 8
+}
+
+// Value returns FieldValue's value
+func (fv *FieldValueSigned64) Value() interface{} {
+	return fv.value
+}
+
+// Set sets the FieldValue's value. Will return an error if the type is incorrect.
+func (fv *FieldValueSigned64) Set(val interface{}) error {
+	switch val.(type) {
+	case int64:
+		fv.value = val.(int64)
+	default:
+		return fmt.Errorf("Invalid type for %s", reflect.TypeOf(fv))
+	}
+	return nil
 }
 
 /* */
 // FieldValueFloat32 , "float32" corresponds to an IEEE single-precision 32-bit floating-point type as defined in [IEEE.754.2008].
 type FieldValueFloat32 struct {
-	Value float32
+	value float32
 }
 
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
-func (fv FieldValueFloat32) MarshalBinary() (data []byte, err error) {
-	return nil, fmt.Errorf("Not yet implemented!")
+func (fv *FieldValueFloat32) MarshalBinary() ([]byte, error) {
+	return marshalBinarySingleValue(fv.value)
 }
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
-func (fv FieldValueFloat32) UnmarshalBinary(data []byte) error {
-	return fmt.Errorf("Not yet implemented!")
+func (fv *FieldValueFloat32) UnmarshalBinary(data []byte) error {
+	if len(data) < 4 {
+		return fmt.Errorf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data))
+	}
+	fv.value = math.Float32frombits(binary.BigEndian.Uint32(data))
+	return nil
 }
 
 // Len returns the number of octets this FieldValue is wide
-func (fv FieldValueFloat32) Len() uint16 {
+func (fv *FieldValueFloat32) Len() uint16 {
 	return 4
+}
+
+// Value returns FieldValue's value
+func (fv *FieldValueFloat32) Value() interface{} {
+	return fv.value
+}
+
+// Set sets the FieldValue's value. Will return an error if the type is incorrect.
+func (fv *FieldValueFloat32) Set(val interface{}) error {
+	switch val.(type) {
+	case float32:
+		fv.value = val.(float32)
+	default:
+		return fmt.Errorf("Invalid type for %s", reflect.TypeOf(fv))
+	}
+	return nil
 }
 
 /* */
 // FieldValueFloat64 , "float64" corresponds to an IEEE double-precision 64-bit floating-point type as defined in [IEEE.754.2008].
 type FieldValueFloat64 struct {
-	Value float64
+	value float64
 }
 
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
-func (fv FieldValueFloat64) MarshalBinary() (data []byte, err error) {
-	return nil, fmt.Errorf("Not yet implemented!")
+func (fv *FieldValueFloat64) MarshalBinary() ([]byte, error) {
+	return marshalBinarySingleValue(fv.value)
 }
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
-func (fv FieldValueFloat64) UnmarshalBinary(data []byte) error {
-	return fmt.Errorf("Not yet implemented!")
+func (fv *FieldValueFloat64) UnmarshalBinary(data []byte) error {
+	if len(data) < 8 {
+		return fmt.Errorf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data))
+	}
+	fv.value = math.Float64frombits(binary.BigEndian.Uint64(data))
+	return nil
 }
 
 // Len returns the number of octets this FieldValue is wide
-func (fv FieldValueFloat64) Len() uint16 {
+func (fv *FieldValueFloat64) Len() uint16 {
 	return 8
+}
+
+// Value returns FieldValue's value
+func (fv *FieldValueFloat64) Value() interface{} {
+	return fv.value
+}
+
+// Set sets the FieldValue's value. Will return an error if the type is incorrect.
+func (fv *FieldValueFloat64) Set(val interface{}) error {
+	switch val.(type) {
+	case float64:
+		fv.value = val.(float64)
+	default:
+		return fmt.Errorf("Invalid type for %s", reflect.TypeOf(fv))
+	}
+	return nil
 }
 
 /* */
@@ -229,86 +445,106 @@ func (fv FieldValueFloat64) Len() uint16 {
 //It is encoded as a single-octet integer per Section 6.1.1, with the value 1 for true and value 2 for false.
 //Every other value is undefined.
 type FieldValueBoolean struct {
-	Value bool
+	value bool
 }
 
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
-func (fv FieldValueBoolean) MarshalBinary() (data []byte, err error) {
+func (fv *FieldValueBoolean) MarshalBinary() ([]byte, error) {
 	return nil, fmt.Errorf("Not yet implemented!")
 }
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
-func (fv FieldValueBoolean) UnmarshalBinary(data []byte) error {
+func (fv *FieldValueBoolean) UnmarshalBinary(data []byte) error {
 	return fmt.Errorf("Not yet implemented!")
 }
 
 // Len returns the number of octets this FieldValue is wide
-func (fv FieldValueBoolean) Len() uint16 {
+func (fv *FieldValueBoolean) Len() uint16 {
 	return 1
+}
+
+// Value returns FieldValue's value
+func (fv *FieldValueBoolean) Value() interface{} {
+	return fv.value
 }
 
 /* */
 // FieldValueMacAddress , "macAddress" represents a MAC-48 address as defined in [IEEE.802-3.2012].
 type FieldValueMacAddress struct {
-	Value net.HardwareAddr
+	value net.HardwareAddr
 }
 
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
-func (fv FieldValueMacAddress) MarshalBinary() (data []byte, err error) {
+func (fv *FieldValueMacAddress) MarshalBinary() ([]byte, error) {
 	return nil, fmt.Errorf("Not yet implemented!")
 }
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
-func (fv FieldValueMacAddress) UnmarshalBinary(data []byte) error {
+func (fv *FieldValueMacAddress) UnmarshalBinary(data []byte) error {
 	return fmt.Errorf("Not yet implemented!")
 }
 
 // Len returns the number of octets this FieldValue is wide
-func (fv FieldValueMacAddress) Len() uint16 {
+func (fv *FieldValueMacAddress) Len() uint16 {
 	return 6 //48 bits or 12 characters in hex
+}
+
+// Value returns FieldValue's value
+func (fv *FieldValueMacAddress) Value() interface{} {
+	return fv.value
 }
 
 /* */
 // FieldValueOctetArray , "octetArray" represents a finite-length string of octets.
 type FieldValueOctetArray struct {
-	Value []byte
+	value []byte
 }
 
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
-func (fv FieldValueOctetArray) MarshalBinary() (data []byte, err error) {
+func (fv *FieldValueOctetArray) MarshalBinary() ([]byte, error) {
 	return nil, fmt.Errorf("Not yet implemented!")
 }
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
-func (fv FieldValueOctetArray) UnmarshalBinary(data []byte) error {
+func (fv *FieldValueOctetArray) UnmarshalBinary(data []byte) error {
 	return fmt.Errorf("Not yet implemented!")
 }
 
 // Len returns the number of octets this FieldValue is wide
-func (fv FieldValueOctetArray) Len() uint16 {
-	return uint16(len(fv.Value))
+func (fv *FieldValueOctetArray) Len() uint16 {
+	return uint16(len(fv.value))
+}
+
+// Value returns FieldValue's value
+func (fv *FieldValueOctetArray) Value() interface{} {
+	return fv.value
 }
 
 /* */
 // FieldValueString , "string" represents a finite-length string of valid characters from the Unicode coded character set [ISO.10646].
 //Unicode incorporates ASCII [RFC20] and the characters of many other international character sets.
 type FieldValueString struct {
-	Value string
+	value string
 }
 
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
-func (fv FieldValueString) MarshalBinary() (data []byte, err error) {
+func (fv *FieldValueString) MarshalBinary() ([]byte, error) {
 	return nil, fmt.Errorf("Not yet implemented!")
 }
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
-func (fv FieldValueString) UnmarshalBinary(data []byte) error {
+func (fv *FieldValueString) UnmarshalBinary(data []byte) error {
 	return fmt.Errorf("Not yet implemented!")
 }
 
 // Len returns the number of octets this FieldValue is wide
-func (fv FieldValueString) Len() uint16 {
-	return uint16(len([]byte(fv.Value))) //Must convert to []byte first...
+func (fv *FieldValueString) Len() uint16 {
+	return uint16(len([]byte(fv.value))) //Must convert to []byte first...
+}
+
+// Value returns FieldValue's value
+func (fv *FieldValueString) Value() interface{} {
+	return fv.value
 }
 
 /* */
@@ -316,44 +552,54 @@ func (fv FieldValueString) Len() uint16 {
 //The dateTimeSeconds data type is an unsigned 32-bit integer in network byte order containing the number of seconds since the UNIX epoch, 1 January 1970 at 00:00 UTC, as defined in [POSIX.1].
 //dateTimeSeconds is encoded identically to the IPFIX Message Header Export Time field.
 type FieldValueDateTimeSeconds struct {
-	Value time.Time
+	value time.Time
 }
 
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
-func (fv FieldValueDateTimeSeconds) MarshalBinary() (data []byte, err error) {
+func (fv *FieldValueDateTimeSeconds) MarshalBinary() ([]byte, error) {
 	return nil, fmt.Errorf("Not yet implemented!")
 }
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
-func (fv FieldValueDateTimeSeconds) UnmarshalBinary(data []byte) error {
+func (fv *FieldValueDateTimeSeconds) UnmarshalBinary(data []byte) error {
 	return fmt.Errorf("Not yet implemented!")
 }
 
 // Len returns the number of octets this FieldValue is wide
-func (fv FieldValueDateTimeSeconds) Len() uint16 {
+func (fv *FieldValueDateTimeSeconds) Len() uint16 {
 	return 4
+}
+
+// Value returns FieldValue's value
+func (fv *FieldValueDateTimeSeconds) Value() interface{} {
+	return fv.value
 }
 
 /* */
 // FieldValueDateTimeMilliseconds , "dateTimeMilliseconds" represents a time value expressed with millisecond-level precision.
 // The dateTimeMilliseconds data type is an unsigned 64-bit integer in network byte order containing the number of milliseconds since the UNIX epoch, 1 January 1970 at 00:00 UTC, as defined in [POSIX.1].
 type FieldValueDateTimeMilliseconds struct {
-	Value time.Time
+	value time.Time
 }
 
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
-func (fv FieldValueDateTimeMilliseconds) MarshalBinary() (data []byte, err error) {
+func (fv *FieldValueDateTimeMilliseconds) MarshalBinary() ([]byte, error) {
 	return nil, fmt.Errorf("Not yet implemented!")
 }
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
-func (fv FieldValueDateTimeMilliseconds) UnmarshalBinary(data []byte) error {
+func (fv *FieldValueDateTimeMilliseconds) UnmarshalBinary(data []byte) error {
 	return fmt.Errorf("Not yet implemented!")
 }
 
 // Len returns the number of octets this FieldValue is wide
-func (fv FieldValueDateTimeMilliseconds) Len() uint16 {
+func (fv *FieldValueDateTimeMilliseconds) Len() uint16 {
 	return 8
+}
+
+// Value returns FieldValue's value
+func (fv *FieldValueDateTimeMilliseconds) Value() interface{} {
+	return fv.value
 }
 
 /* */
@@ -364,22 +610,27 @@ func (fv FieldValueDateTimeMilliseconds) Len() uint16 {
 //The Fraction field is the fractional number of seconds in units of 1/(2^32) seconds (approximately 233 picoseconds).
 //It can represent dates between 1 January 1900 and 8 February 2036 in the current NTP era.
 type FieldValueDateTimeMicroseconds struct {
-	Value time.Time
+	value time.Time
 }
 
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
-func (fv FieldValueDateTimeMicroseconds) MarshalBinary() (data []byte, err error) {
+func (fv *FieldValueDateTimeMicroseconds) MarshalBinary() ([]byte, error) {
 	return nil, fmt.Errorf("Not yet implemented!")
 }
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
-func (fv FieldValueDateTimeMicroseconds) UnmarshalBinary(data []byte) error {
+func (fv *FieldValueDateTimeMicroseconds) UnmarshalBinary(data []byte) error {
 	return fmt.Errorf("Not yet implemented!")
 }
 
 // Len returns the number of octets this FieldValue is wide
-func (fv FieldValueDateTimeMicroseconds) Len() uint16 {
+func (fv *FieldValueDateTimeMicroseconds) Len() uint16 {
 	return 8
+}
+
+// Value returns FieldValue's value
+func (fv *FieldValueDateTimeMicroseconds) Value() interface{} {
+	return fv.value
 }
 
 /* */
@@ -392,125 +643,155 @@ func (fv FieldValueDateTimeMicroseconds) Len() uint16 {
 //
 //Note that dateTimeMicroseconds and dateTimeNanoseconds share an identical encoding.  There is no restriction on the interpretation of the Fraction field for the dateTimeNanoseconds data type.
 type FieldValueDateTimeNanoseconds struct {
-	Value time.Time
+	value time.Time
 }
 
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
-func (fv FieldValueDateTimeNanoseconds) MarshalBinary() (data []byte, err error) {
+func (fv *FieldValueDateTimeNanoseconds) MarshalBinary() ([]byte, error) {
 	return nil, fmt.Errorf("Not yet implemented!")
 }
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
-func (fv FieldValueDateTimeNanoseconds) UnmarshalBinary(data []byte) error {
+func (fv *FieldValueDateTimeNanoseconds) UnmarshalBinary(data []byte) error {
 	return fmt.Errorf("Not yet implemented!")
 }
 
 // Len returns the number of octets this FieldValue is wide
-func (fv FieldValueDateTimeNanoseconds) Len() uint16 {
+func (fv *FieldValueDateTimeNanoseconds) Len() uint16 {
 	return 8
+}
+
+// Value returns FieldValue's value
+func (fv *FieldValueDateTimeNanoseconds) Value() interface{} {
+	return fv.value
 }
 
 /* */
 // FieldValueIPv4Address , "ipv4Address" represents an IPv4 address.
 type FieldValueIPv4Address struct {
-	Value net.IP
+	value net.IP
 }
 
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
-func (fv FieldValueIPv4Address) MarshalBinary() (data []byte, err error) {
+func (fv *FieldValueIPv4Address) MarshalBinary() ([]byte, error) {
 	return nil, fmt.Errorf("Not yet implemented!")
 }
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
-func (fv FieldValueIPv4Address) UnmarshalBinary(data []byte) error {
+func (fv *FieldValueIPv4Address) UnmarshalBinary(data []byte) error {
 	return fmt.Errorf("Not yet implemented!")
 }
 
 // Len returns the number of octets this FieldValue is wide
-func (fv FieldValueIPv4Address) Len() uint16 {
+func (fv *FieldValueIPv4Address) Len() uint16 {
 	return 4
+}
+
+// Value returns FieldValue's value
+func (fv *FieldValueIPv4Address) Value() interface{} {
+	return fv.value
 }
 
 /* */
 // FieldValueIPv6Address , "ipv6Address" represents an IPv6 address.
 type FieldValueIPv6Address struct {
-	Value net.IP
+	value net.IP
 }
 
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
-func (fv FieldValueIPv6Address) MarshalBinary() (data []byte, err error) {
+func (fv *FieldValueIPv6Address) MarshalBinary() ([]byte, error) {
 	return nil, fmt.Errorf("Not yet implemented!")
 }
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
-func (fv FieldValueIPv6Address) UnmarshalBinary(data []byte) error {
+func (fv *FieldValueIPv6Address) UnmarshalBinary(data []byte) error {
 	return fmt.Errorf("Not yet implemented!")
 }
 
 // Len returns the number of octets this FieldValue is wide
-func (fv FieldValueIPv6Address) Len() uint16 {
+func (fv *FieldValueIPv6Address) Len() uint16 {
 	return 16
+}
+
+// Value returns FieldValue's value
+func (fv *FieldValueIPv6Address) Value() interface{} {
+	return fv.value
 }
 
 /* */
 // FieldValueBasicList , "basicList" supports structured data export as described in [RFC6313];
 type FieldValueBasicList struct {
-	Value BasicList
+	value BasicList
 }
 
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
-func (fv FieldValueBasicList) MarshalBinary() (data []byte, err error) {
+func (fv *FieldValueBasicList) MarshalBinary() ([]byte, error) {
 	return nil, fmt.Errorf("Not yet implemented!")
 }
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
-func (fv FieldValueBasicList) UnmarshalBinary(data []byte) error {
+func (fv *FieldValueBasicList) UnmarshalBinary(data []byte) error {
 	return fmt.Errorf("Not yet implemented!")
 }
 
 // Len returns the number of octets this FieldValue is wide
-func (fv FieldValueBasicList) Len() uint16 {
-	return fv.Value.Len()
+func (fv *FieldValueBasicList) Len() uint16 {
+	return fv.value.Len()
+}
+
+// Value returns FieldValue's value
+func (fv *FieldValueBasicList) Value() interface{} {
+	return fv.value
 }
 
 /* */
 // FieldValueSubTemplateList , "subTemplateList" supports structured data export as described in [RFC6313];
 type FieldValueSubTemplateList struct {
-	Value SubTemplateList
+	value SubTemplateList
 }
 
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
-func (fv FieldValueSubTemplateList) MarshalBinary() (data []byte, err error) {
+func (fv *FieldValueSubTemplateList) MarshalBinary() ([]byte, error) {
 	return nil, fmt.Errorf("Not yet implemented!")
 }
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
-func (fv FieldValueSubTemplateList) UnmarshalBinary(data []byte) error {
+func (fv *FieldValueSubTemplateList) UnmarshalBinary(data []byte) error {
 	return fmt.Errorf("Not yet implemented!")
 }
 
 // Len returns the number of octets this FieldValue is wide
-func (fv FieldValueSubTemplateList) Len() uint16 {
-	return fv.Value.Len()
+func (fv *FieldValueSubTemplateList) Len() uint16 {
+	return fv.value.Len()
+}
+
+// Value returns FieldValue's value
+func (fv *FieldValueSubTemplateList) Value() interface{} {
+	return fv.value
 }
 
 /* */
 // FieldValueSubTemplateMultiList , "subTemplateMultiList" supports structured data export as described in [RFC6313];
 type FieldValueSubTemplateMultiList struct {
-	Value SubTemplateMultiList
+	value SubTemplateMultiList
 }
 
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
-func (fv FieldValueSubTemplateMultiList) MarshalBinary() (data []byte, err error) {
+func (fv *FieldValueSubTemplateMultiList) MarshalBinary() ([]byte, error) {
 	return nil, fmt.Errorf("Not yet implemented!")
 }
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
-func (fv FieldValueSubTemplateMultiList) UnmarshalBinary(data []byte) error {
+func (fv *FieldValueSubTemplateMultiList) UnmarshalBinary(data []byte) error {
 	return fmt.Errorf("Not yet implemented!")
 }
 
 // Len returns the number of octets this FieldValue is wide
-func (fv FieldValueSubTemplateMultiList) Len() uint16 {
-	return fv.Value.Len()
+func (fv *FieldValueSubTemplateMultiList) Len() uint16 {
+	return fv.value.Len()
+}
+
+// Value returns FieldValue's value
+func (fv *FieldValueSubTemplateMultiList) Value() interface{} {
+	return fv.value
 }
