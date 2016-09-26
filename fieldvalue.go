@@ -505,6 +505,7 @@ type FieldValueMacAddress struct {
 }
 
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
+// Address types -- macAddress, ipv4Address, and ipv6Address -- MUST be encoded the same way as the integral data types, as six, four, and sixteen octets in network byte order, respectively.
 func (fv *FieldValueMacAddress) MarshalBinary() ([]byte, error) {
 	return marshalBinarySingleValue(fv.value)
 }
@@ -540,18 +541,24 @@ func (fv *FieldValueMacAddress) Set(val interface{}) error {
 
 /* */
 // FieldValueOctetArray , "octetArray" represents a finite-length string of octets.
+// The octetArray data type has no encoding rules; it represents a raw array of zero or more octets, with the interpretation of the octets defined in the Information Element definition.
 type FieldValueOctetArray struct {
 	value []byte
 }
 
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
 func (fv *FieldValueOctetArray) MarshalBinary() ([]byte, error) {
-	return nil, fmt.Errorf("Not yet implemented!")
+	content, err := marshalBinarySingleValue(fv.value)
+	if err != nil {
+		return []byte{}, err
+	}
+	return content, nil
 }
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
 func (fv *FieldValueOctetArray) UnmarshalBinary(data []byte) error {
-	return fmt.Errorf("Not yet implemented!")
+	fv.value = make([]byte, len(data))
+	return unmarshalBinaryOctets(data, &fv.value)
 }
 
 // Len returns the number of octets this FieldValue is wide
@@ -564,21 +571,41 @@ func (fv *FieldValueOctetArray) Value() interface{} {
 	return fv.value
 }
 
+// Set sets the FieldValue's value. Will return an error if the type is incorrect.
+func (fv *FieldValueOctetArray) Set(val interface{}) error {
+	switch val.(type) {
+	case string:
+		fv.value = []byte(val.(string))
+	case []byte:
+		fv.value = val.([]byte)
+	default:
+		return fmt.Errorf("Invalid type for %s", reflect.TypeOf(fv))
+	}
+	return nil
+}
+
 /* */
 // FieldValueString , "string" represents a finite-length string of valid characters from the Unicode coded character set [ISO.10646].
-//Unicode incorporates ASCII [RFC20] and the characters of many other international character sets.
+// Unicode incorporates ASCII [RFC20] and the characters of many other international character sets.
+// The string data type MUST be encoded in UTF-8 [RFC3629] format.  The string is sent as an array of zero or more octets using an Information Element of fixed or variable length.
 type FieldValueString struct {
 	value string
 }
 
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
 func (fv *FieldValueString) MarshalBinary() ([]byte, error) {
-	return nil, fmt.Errorf("Not yet implemented!")
+	return marshalBinarySingleValue([]byte(fv.value))
 }
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
 func (fv *FieldValueString) UnmarshalBinary(data []byte) error {
-	return fmt.Errorf("Not yet implemented!")
+	tmpval := make([]byte, len(data))
+	err := unmarshalBinaryOctets(data, tmpval)
+	if err != nil {
+		return err
+	}
+	fv.value = string(tmpval)
+	return nil
 }
 
 // Len returns the number of octets this FieldValue is wide
@@ -589,6 +616,19 @@ func (fv *FieldValueString) Len() uint16 {
 // Value returns FieldValue's value
 func (fv *FieldValueString) Value() interface{} {
 	return fv.value
+}
+
+// Set sets the FieldValue's value. Will return an error if the type is incorrect.
+func (fv *FieldValueString) Set(val interface{}) error {
+	switch val.(type) {
+	case string:
+		fv.value = val.(string)
+	case []byte:
+		fv.value = string(val.([]byte))
+	default:
+		return fmt.Errorf("Invalid type for %s", reflect.TypeOf(fv))
+	}
+	return nil
 }
 
 /* */
@@ -838,4 +878,49 @@ func (fv *FieldValueSubTemplateMultiList) Len() uint16 {
 // Value returns FieldValue's value
 func (fv *FieldValueSubTemplateMultiList) Value() interface{} {
 	return fv.value
+}
+
+/*
+
+Util functions
+
+*/
+
+// EncodeVariableLength returns the bytes for encoding a variable length as specified in RFC 7011, section 7
+// In the Template Set, the Information Element Field Length is recorded as 65535.
+// This reserved length value notifies the Collecting Process that the length value of the Information Element will be carried in the Information Element content itself.
+// In most cases, the length of the Information Element will be less than 255 octets. In this case 1 byte is sufficient to encode the length.
+// The length may also be encoded into 3 octets before the Information Element, allowing the length of the Information Element to be greater than or equal to 255 octets.
+// In this case, the first octet of the Length field MUST be 255, and the length is carried in the second and third octets.
+// The octets carrying the length (either the first or the first three octets) MUST NOT be included in the length of the Information Element.
+func EncodeVariableLength(content []byte) ([]byte, error) {
+	retval := []byte{}
+	if len(content) < 255 {
+		retval = []byte{uint8(len(content))}
+	} else {
+		if len(content) > 65535 {
+			return []byte{}, fmt.Errorf("Content too large, maximum of 65535 octets, but it is %d", len(content))
+		}
+		lengthBytes := []byte{255}
+		lengthContentBytes, err := marshalBinarySingleValue(uint16(len(content)))
+		if err != nil {
+			return []byte{}, err
+		}
+		retval = append(lengthBytes, lengthContentBytes...)
+	}
+	return retval, nil
+}
+
+// DecodeVariableLength returns the length for decoding a variable length as specified in RFC 7011, section 7
+func DecodeVariableLength(content []byte) (uint16, error) {
+	retval := uint16(0)
+	if content[0] == 0 {
+		return 0, fmt.Errorf("Content can not be 0 in length.")
+	}
+	if content[0] < 255 {
+		retval = uint16(content[0])
+	} else {
+		retval = uint16(256*uint16(content[1])) + uint16(content[2])
+	}
+	return retval, nil
 }

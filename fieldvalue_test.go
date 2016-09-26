@@ -1,6 +1,7 @@
 package ipfixmessage
 
 import (
+	"bytes"
 	"fmt"
 	"math"
 	"net"
@@ -93,6 +94,12 @@ func TestFieldValueSetGet(t *testing.T) {
 
 		22: {TestVal: &FieldValueMacAddress{value: net.HardwareAddr{0x01, 0x23, 0x45, 0x67, 0x89, 0xab}}, CompVal: int32(4), MustFail: true, ByteCompare: true},
 		23: {TestVal: &FieldValueMacAddress{value: net.HardwareAddr{0x00, 0x00, 0x00, 0x00, 0x00, 0x00}}, CompVal: net.HardwareAddr{0x01, 0x23, 0x45, 0x67, 0x89, 0xab}, MustFail: false, ByteCompare: true},
+
+		24: {TestVal: &FieldValueOctetArray{value: []byte{0x01, 0x23, 0x45, 0x67, 0x89, 0xab}}, CompVal: int32(13), MustFail: true, ByteCompare: true},
+		25: {TestVal: &FieldValueOctetArray{value: []byte("teststring")}, CompVal: []byte("teststring"), MustFail: false, ByteCompare: true},
+
+		26: {TestVal: &FieldValueString{value: "To be or not to be, is that even questionable?"}, CompVal: net.HardwareAddr{0x01, 0x23, 0x45, 0x67, 0x89, 0xab}, MustFail: true, ByteCompare: true},
+		27: {TestVal: &FieldValueString{value: "一帆风顺"}, CompVal: "一帆风顺", MustFail: false, ByteCompare: true},
 	}
 
 	for _, testcase := range testset {
@@ -112,6 +119,76 @@ func TestFieldValueSetGet(t *testing.T) {
 			}
 		}
 	}
+}
+
+type fieldvalueMarshalEncodingTestcase struct {
+	SourceVal      FieldValue
+	CompEncoded    []byte
+	VariableLength bool
+}
+
+func TestMarshalEncoding(t *testing.T) {
+	var testset = []fieldvalueMarshalEncodingTestcase{
+		0: {SourceVal: &FieldValueUnsigned8{value: 42}, CompEncoded: []byte{42}},
+		1: {SourceVal: &FieldValueUnsigned16{value: 0x0102}, CompEncoded: []byte{1, 2}},
+		2: {SourceVal: &FieldValueUnsigned16{value: 0x0201}, CompEncoded: []byte{2, 1}},
+		3: {SourceVal: &FieldValueUnsigned32{value: 0x01020304}, CompEncoded: []byte{1, 2, 3, 4}},
+		4: {SourceVal: &FieldValueUnsigned32{value: 0x04030201}, CompEncoded: []byte{4, 3, 2, 1}},
+		5: {SourceVal: &FieldValueUnsigned64{value: 0x0102030405060708}, CompEncoded: []byte{1, 2, 3, 4, 5, 6, 7, 8}},
+		6: {SourceVal: &FieldValueUnsigned64{value: 0x0807060504030201}, CompEncoded: []byte{8, 7, 6, 5, 4, 3, 2, 1}},
+
+		7:  {SourceVal: &FieldValueSigned8{value: -42}, CompEncoded: []byte{214}},
+		8:  {SourceVal: &FieldValueSigned16{value: -0x0102}, CompEncoded: []byte{254, 254}},
+		9:  {SourceVal: &FieldValueSigned16{value: -0x0201}, CompEncoded: []byte{253, 255}},
+		10: {SourceVal: &FieldValueSigned32{value: -0x01020304}, CompEncoded: []byte{254, 253, 252, 252}},
+		11: {SourceVal: &FieldValueSigned32{value: -0x04030201}, CompEncoded: []byte{251, 252, 253, 255}},
+		12: {SourceVal: &FieldValueSigned64{value: -0x0102030405060708}, CompEncoded: []byte{254, 253, 252, 251, 250, 249, 248, 248}},
+		13: {SourceVal: &FieldValueSigned64{value: -0x0807060504030201}, CompEncoded: []byte{247, 248, 249, 250, 251, 252, 253, 255}},
+
+		14: {SourceVal: &FieldValueFloat32{value: 0x01020304}, CompEncoded: []byte{75, 129, 1, 130}},
+		15: {SourceVal: &FieldValueFloat64{value: 0x0102030405060708}, CompEncoded: []byte{67, 112, 32, 48, 64, 80, 96, 112}},
+
+		16: {SourceVal: &FieldValueBoolean{value: true}, CompEncoded: []byte{1}},
+		17: {SourceVal: &FieldValueBoolean{value: false}, CompEncoded: []byte{2}},
+
+		18: {SourceVal: &FieldValueMacAddress{value: net.HardwareAddr{0x01, 0x23, 0x45, 0x67, 0x89, 0xab}}, CompEncoded: []byte{0x01, 0x23, 0x45, 0x67, 0x89, 0xab}},
+
+		19: {SourceVal: &FieldValueOctetArray{value: []byte{0x01, 0x23, 0x45, 0x67, 0x89, 0xab}}, CompEncoded: []byte{0x01, 0x23, 0x45, 0x67, 0x89, 0xab}},         //Not variable
+		20: {SourceVal: &FieldValueOctetArray{value: largeOctetArray(100)}, CompEncoded: append([]byte{100}, largeOctetArray(100)...), VariableLength: true},       //VariableLength < 255
+		21: {SourceVal: &FieldValueOctetArray{value: largeOctetArray(513)}, CompEncoded: append([]byte{255, 2, 1}, largeOctetArray(513)...), VariableLength: true}, //VariableLength >=255 (513)
+
+		22: {SourceVal: &FieldValueString{value: "abcdef"}, CompEncoded: []byte{97, 98, 99, 100, 101, 102}},                                                            //Not variable
+		23: {SourceVal: &FieldValueString{value: "一帆风顺"}, CompEncoded: []byte{12, 228, 184, 128, 229, 184, 134, 233, 163, 142, 233, 161, 186}, VariableLength: true},   //VariableLength < 255
+		24: {SourceVal: &FieldValueString{value: string(largeOctetArray(513))}, CompEncoded: append([]byte{255, 2, 1}, largeOctetArray(513)...), VariableLength: true}, //VariableLength >= 255 (513)
+	}
+
+	for _, testcase := range testset {
+		binarydata, err := testcase.SourceVal.MarshalBinary()
+		if err != nil {
+			t.Errorf("Error marshalling %#v: %#v", testcase.SourceVal, err)
+		}
+		lendata := []byte{}
+		if testcase.VariableLength {
+			lendata, err = EncodeVariableLength(binarydata)
+			if err != nil {
+				t.Errorf("Error encoding variable size %#v: %#v", testcase.SourceVal, err)
+			}
+		}
+		casedata := append(lendata, binarydata...)
+		if !bytes.Equal(casedata, testcase.CompEncoded) {
+			t.Errorf("Error marshalling %#v, became %v but should have been %v", testcase.SourceVal, casedata, testcase.CompEncoded)
+		}
+		if testcase.VariableLength {
+			caselen, err := DecodeVariableLength(casedata[0:3])
+			if err != nil {
+				t.Errorf("Error decoding length of variable element %#v", err)
+			}
+			if caselen != testcase.SourceVal.Len() {
+				t.Errorf("Error in decoding length of variable element, wanted %d, but got %d", testcase.SourceVal.Len(), caselen)
+			}
+		}
+	}
+
 }
 
 type fieldvalueMarshalUnmarshalTestcase struct {
@@ -147,6 +224,14 @@ func TestFieldValueMarshalUnmarshal(t *testing.T) {
 
 		20: {SourceVal: &FieldValueBoolean{value: false}, DestVal: &FieldValueBoolean{value: true}, CompVal: bool(false)},
 		21: {SourceVal: &FieldValueBoolean{value: true}, DestVal: &FieldValueBoolean{value: false}, CompVal: bool(true)},
+
+		22: {SourceVal: &FieldValueMacAddress{value: net.HardwareAddr{0x01, 0x23, 0x45, 0x67, 0x89, 0xab}}, DestVal: &FieldValueMacAddress{value: net.HardwareAddr{0, 0, 0, 0, 0, 0}}, CompVal: net.HardwareAddr{0x01, 0x23, 0x45, 0x67, 0x89, 0xab}},
+
+		23: {SourceVal: &FieldValueOctetArray{value: []byte{0x01, 0x23, 0x45, 0x67, 0x89, 0xab}}, DestVal: &FieldValueOctetArray{value: []byte{}}, CompVal: []uint8{0x01, 0x23, 0x45, 0x67, 0x89, 0xab}},
+		24: {SourceVal: &FieldValueOctetArray{value: largeOctetArray(1024)}, DestVal: &FieldValueOctetArray{value: []byte{}}, CompVal: []uint8(largeOctetArray(1024))},
+
+		25: {SourceVal: &FieldValueString{value: string([]byte{0x01, 0x23, 0x45, 0x67, 0x89, 0xab})}, DestVal: &FieldValueString{value: ""}, CompVal: string([]byte{0x01, 0x23, 0x45, 0x67, 0x89, 0xab})},
+		26: {SourceVal: &FieldValueString{value: string(largeOctetArray(1024))}, DestVal: &FieldValueString{value: ""}, CompVal: string([]byte(largeOctetArray(1024)))},
 	}
 
 	for _, testcase := range testset {
@@ -161,11 +246,11 @@ func TestFieldValueMarshalUnmarshal(t *testing.T) {
 		if err != nil {
 			t.Errorf("Error unmarshalling %#v: %#v", testcase.SourceVal, err)
 		}
-		if !reflect.DeepEqual(testcase.SourceVal, testcase.DestVal) {
-			t.Errorf("Error in value after conversions, wanted %#v, but got %#v", testcase.SourceVal, testcase.DestVal)
+		if !reflect.DeepEqual(testcase.SourceVal, testcase.DestVal) || !reflect.DeepEqual(testcase.DestVal.Value(), testcase.CompVal) {
+			t.Errorf("Error in value after conversions, wanted %#v (%#v), but got %#v", testcase.SourceVal, testcase.CompVal, testcase.DestVal)
 		}
-		if testcase.DestVal.Value() != testcase.CompVal {
-			t.Errorf("Error in value after conversions, wanted %#v, but got %#v", testcase.CompVal, testcase.DestVal)
+		if testcase.SourceVal.Len() < 12 {
+			fmt.Println(testcase.SourceVal.Value(), testcase.DestVal.Value(), testcase.CompVal)
 		}
 	}
 }
@@ -208,4 +293,12 @@ func goTypeName(fv interface{}) int {
 	default:
 		return t_unknown
 	}
+}
+
+func largeOctetArray(size int) []byte {
+	retval := make([]byte, size)
+	for idx := range retval {
+		retval[idx] = byte(idx)
+	}
+	return retval
 }
