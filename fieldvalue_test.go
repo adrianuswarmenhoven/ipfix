@@ -108,6 +108,15 @@ func TestFieldValueSetGet(t *testing.T) {
 
 		28: {TestVal: &FieldValueDateTimeSeconds{value: dateA}, CompVal: dateA, MustFail: false, ByteCompare: true},
 		29: {TestVal: &FieldValueDateTimeSeconds{value: dateA}, CompVal: uint64(0), MustFail: true, ByteCompare: true},
+
+		30: {TestVal: &FieldValueDateTimeMilliseconds{value: dateA}, CompVal: dateA, MustFail: false, ByteCompare: true},
+		31: {TestVal: &FieldValueDateTimeMilliseconds{value: dateA}, CompVal: uint64(0), MustFail: true, ByteCompare: true},
+
+		32: {TestVal: &FieldValueDateTimeMicroseconds{value: dateA}, CompVal: dateA, MustFail: false, ByteCompare: true},
+		33: {TestVal: &FieldValueDateTimeMicroseconds{value: dateA}, CompVal: uint64(0), MustFail: true, ByteCompare: true},
+
+		34: {TestVal: &FieldValueDateTimeNanoseconds{value: dateA}, CompVal: dateA, MustFail: false, ByteCompare: true},
+		35: {TestVal: &FieldValueDateTimeNanoseconds{value: dateA}, CompVal: uint64(0), MustFail: true, ByteCompare: true},
 	}
 
 	for _, testcase := range testset {
@@ -172,6 +181,10 @@ func TestMarshalEncoding(t *testing.T) {
 		25: {SourceVal: &FieldValueDateTimeSeconds{value: dateB}, CompEncoded: []byte{82, 85, 27, 16}, VariableLength: false},
 
 		26: {SourceVal: &FieldValueDateTimeMilliseconds{value: dateB}, CompEncoded: []byte{0, 0, 1, 65, 156, 113, 182, 128}, VariableLength: false},
+
+		27: {SourceVal: &FieldValueDateTimeMicroseconds{value: dateB}, CompEncoded: []byte{213, 255, 153, 144, 0, 0, 0, 0}, VariableLength: false},
+
+		28: {SourceVal: &FieldValueDateTimeNanoseconds{value: dateB}, CompEncoded: []byte{213, 255, 153, 144, 0, 0, 0, 0}, VariableLength: false},
 	}
 
 	for _, testcase := range testset {
@@ -250,6 +263,12 @@ func TestFieldValueMarshalUnmarshal(t *testing.T) {
 
 		29: {SourceVal: &FieldValueDateTimeMilliseconds{value: dateA}, DestVal: &FieldValueDateTimeMilliseconds{value: time.Now()}, CompVal: dateA},
 		30: {SourceVal: &FieldValueDateTimeMilliseconds{value: dateB}, DestVal: &FieldValueDateTimeMilliseconds{value: time.Now()}, CompVal: dateB},
+
+		31: {SourceVal: &FieldValueDateTimeMicroseconds{value: dateA}, DestVal: &FieldValueDateTimeMicroseconds{value: time.Now()}, CompVal: dateA},
+		32: {SourceVal: &FieldValueDateTimeMicroseconds{value: dateB}, DestVal: &FieldValueDateTimeMicroseconds{value: time.Now()}, CompVal: dateB},
+
+		33: {SourceVal: &FieldValueDateTimeNanoseconds{value: dateA}, DestVal: &FieldValueDateTimeNanoseconds{value: time.Now()}, CompVal: dateA},
+		34: {SourceVal: &FieldValueDateTimeNanoseconds{value: dateB}, DestVal: &FieldValueDateTimeNanoseconds{value: time.Now()}, CompVal: dateB},
 	}
 
 	for _, testcase := range testset {
