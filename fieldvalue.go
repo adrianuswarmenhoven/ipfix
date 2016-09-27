@@ -641,12 +641,18 @@ type FieldValueDateTimeSeconds struct {
 
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
 func (fv *FieldValueDateTimeSeconds) MarshalBinary() ([]byte, error) {
-	return nil, fmt.Errorf("Not yet implemented!")
+	marshalValue := uint32(fv.value.Unix())
+	return marshalBinarySingleValue(marshalValue)
 }
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
 func (fv *FieldValueDateTimeSeconds) UnmarshalBinary(data []byte) error {
-	return fmt.Errorf("Not yet implemented!")
+	if len(data) < 4 {
+		return fmt.Errorf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data))
+	}
+	secondsSinceEpoch := binary.BigEndian.Uint32(data)
+	fv.value = time.Unix(int64(secondsSinceEpoch), 0)
+	return nil
 }
 
 // Len returns the number of octets this FieldValue is wide
@@ -659,6 +665,17 @@ func (fv *FieldValueDateTimeSeconds) Value() interface{} {
 	return fv.value
 }
 
+// Set sets the FieldValue's value. Will return an error if the type is incorrect.
+func (fv *FieldValueDateTimeSeconds) Set(val interface{}) error {
+	switch val.(type) {
+	case time.Time:
+		fv.value = val.(time.Time)
+	default:
+		return fmt.Errorf("Invalid type for %s", reflect.TypeOf(fv))
+	}
+	return nil
+}
+
 /* */
 // FieldValueDateTimeMilliseconds , "dateTimeMilliseconds" represents a time value expressed with millisecond-level precision.
 // The dateTimeMilliseconds data type is an unsigned 64-bit integer in network byte order containing the number of milliseconds since the UNIX epoch, 1 January 1970 at 00:00 UTC, as defined in [POSIX.1].
@@ -668,12 +685,20 @@ type FieldValueDateTimeMilliseconds struct {
 
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
 func (fv *FieldValueDateTimeMilliseconds) MarshalBinary() ([]byte, error) {
-	return nil, fmt.Errorf("Not yet implemented!")
+	marshalValue := uint64(fv.value.UnixNano() / 1000000)
+	return marshalBinarySingleValue(marshalValue)
 }
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
 func (fv *FieldValueDateTimeMilliseconds) UnmarshalBinary(data []byte) error {
-	return fmt.Errorf("Not yet implemented!")
+	if len(data) < 8 {
+		return fmt.Errorf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data))
+	}
+	milliSecondsSinceEpoch := binary.BigEndian.Uint64(data)
+	secondsSinceEpoch := uint64(milliSecondsSinceEpoch) / uint64(1000)
+	nanosecondsSinceEpoch := uint64(milliSecondsSinceEpoch) % uint64(1000)
+	fv.value = time.Unix(int64(secondsSinceEpoch), int64(nanosecondsSinceEpoch))
+	return nil
 }
 
 // Len returns the number of octets this FieldValue is wide
@@ -684,6 +709,17 @@ func (fv *FieldValueDateTimeMilliseconds) Len() uint16 {
 // Value returns FieldValue's value
 func (fv *FieldValueDateTimeMilliseconds) Value() interface{} {
 	return fv.value
+}
+
+// Set sets the FieldValue's value. Will return an error if the type is incorrect.
+func (fv *FieldValueDateTimeMilliseconds) Set(val interface{}) error {
+	switch val.(type) {
+	case time.Time:
+		fv.value = val.(time.Time)
+	default:
+		return fmt.Errorf("Invalid type for %s", reflect.TypeOf(fv))
+	}
+	return nil
 }
 
 /* */

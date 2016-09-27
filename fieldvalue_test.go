@@ -57,6 +57,11 @@ func TestFieldValueValueGoTypes(t *testing.T) {
 	//We don't check the RFC 6313 values here since they are complex types and all end up using the above Field Values anyway
 }
 
+var (
+	dateA, _ = time.Parse(time.RFC822, "20 Jan 14 22:45 CET")
+	dateB, _ = time.Parse(time.RFC822, "09 Oct 13 10:00 CET")
+)
+
 type fieldvalueSetGetTestcase struct {
 	TestVal     FieldValue
 	CompVal     interface{}
@@ -100,6 +105,9 @@ func TestFieldValueSetGet(t *testing.T) {
 
 		26: {TestVal: &FieldValueString{value: "To be or not to be, is that even questionable?"}, CompVal: net.HardwareAddr{0x01, 0x23, 0x45, 0x67, 0x89, 0xab}, MustFail: true, ByteCompare: true},
 		27: {TestVal: &FieldValueString{value: "一帆风顺"}, CompVal: "一帆风顺", MustFail: false, ByteCompare: true},
+
+		28: {TestVal: &FieldValueDateTimeSeconds{value: dateA}, CompVal: dateA, MustFail: false, ByteCompare: true},
+		29: {TestVal: &FieldValueDateTimeSeconds{value: dateA}, CompVal: uint64(0), MustFail: true, ByteCompare: true},
 	}
 
 	for _, testcase := range testset {
@@ -160,6 +168,10 @@ func TestMarshalEncoding(t *testing.T) {
 		22: {SourceVal: &FieldValueString{value: "abcdef"}, CompEncoded: []byte{97, 98, 99, 100, 101, 102}},                                                            //Not variable
 		23: {SourceVal: &FieldValueString{value: "一帆风顺"}, CompEncoded: []byte{12, 228, 184, 128, 229, 184, 134, 233, 163, 142, 233, 161, 186}, VariableLength: true},   //VariableLength < 255
 		24: {SourceVal: &FieldValueString{value: string(largeOctetArray(513))}, CompEncoded: append([]byte{255, 2, 1}, largeOctetArray(513)...), VariableLength: true}, //VariableLength >= 255 (513)
+
+		25: {SourceVal: &FieldValueDateTimeSeconds{value: dateB}, CompEncoded: []byte{82, 85, 27, 16}, VariableLength: false},
+
+		26: {SourceVal: &FieldValueDateTimeMilliseconds{value: dateB}, CompEncoded: []byte{0, 0, 1, 65, 156, 113, 182, 128}, VariableLength: false},
 	}
 
 	for _, testcase := range testset {
@@ -232,6 +244,12 @@ func TestFieldValueMarshalUnmarshal(t *testing.T) {
 
 		25: {SourceVal: &FieldValueString{value: string([]byte{0x01, 0x23, 0x45, 0x67, 0x89, 0xab})}, DestVal: &FieldValueString{value: ""}, CompVal: string([]byte{0x01, 0x23, 0x45, 0x67, 0x89, 0xab})},
 		26: {SourceVal: &FieldValueString{value: string(largeOctetArray(1024))}, DestVal: &FieldValueString{value: ""}, CompVal: string([]byte(largeOctetArray(1024)))},
+
+		27: {SourceVal: &FieldValueDateTimeSeconds{value: dateA}, DestVal: &FieldValueDateTimeSeconds{value: time.Now()}, CompVal: dateA},
+		28: {SourceVal: &FieldValueDateTimeSeconds{value: dateB}, DestVal: &FieldValueDateTimeSeconds{value: time.Now()}, CompVal: dateB},
+
+		29: {SourceVal: &FieldValueDateTimeMilliseconds{value: dateA}, DestVal: &FieldValueDateTimeMilliseconds{value: time.Now()}, CompVal: dateA},
+		30: {SourceVal: &FieldValueDateTimeMilliseconds{value: dateB}, DestVal: &FieldValueDateTimeMilliseconds{value: time.Now()}, CompVal: dateB},
 	}
 
 	for _, testcase := range testset {
