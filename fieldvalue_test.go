@@ -60,6 +60,8 @@ func TestFieldValueValueGoTypes(t *testing.T) {
 var (
 	dateA, _ = time.Parse(time.RFC822, "20 Jan 14 22:45 CET")
 	dateB, _ = time.Parse(time.RFC822, "09 Oct 13 10:00 CET")
+	//dateC, _ = time.Parse(time.RFC822, "07 Dec 70 10:00 CET")
+	dateC = time.Unix(int64(29408400), int64(502219461))
 )
 
 type fieldvalueSetGetTestcase struct {
@@ -106,17 +108,23 @@ func TestFieldValueSetGet(t *testing.T) {
 		26: {TestVal: &FieldValueString{value: "To be or not to be, is that even questionable?"}, CompVal: net.HardwareAddr{0x01, 0x23, 0x45, 0x67, 0x89, 0xab}, MustFail: true, ByteCompare: true},
 		27: {TestVal: &FieldValueString{value: "一帆风顺"}, CompVal: "一帆风顺", MustFail: false, ByteCompare: true},
 
-		28: {TestVal: &FieldValueDateTimeSeconds{value: dateA}, CompVal: dateA, MustFail: false, ByteCompare: true},
-		29: {TestVal: &FieldValueDateTimeSeconds{value: dateA}, CompVal: uint64(0), MustFail: true, ByteCompare: true},
+		28: {TestVal: &FieldValueDateTimeSeconds{value: dateB}, CompVal: dateA, MustFail: false, ByteCompare: true},
+		29: {TestVal: &FieldValueDateTimeSeconds{value: dateB}, CompVal: uint64(0), MustFail: true, ByteCompare: true},
 
-		30: {TestVal: &FieldValueDateTimeMilliseconds{value: dateA}, CompVal: dateA, MustFail: false, ByteCompare: true},
+		30: {TestVal: &FieldValueDateTimeMilliseconds{value: dateB}, CompVal: dateA, MustFail: false, ByteCompare: true},
 		31: {TestVal: &FieldValueDateTimeMilliseconds{value: dateA}, CompVal: uint64(0), MustFail: true, ByteCompare: true},
 
-		32: {TestVal: &FieldValueDateTimeMicroseconds{value: dateA}, CompVal: dateA, MustFail: false, ByteCompare: true},
+		32: {TestVal: &FieldValueDateTimeMicroseconds{value: dateB}, CompVal: dateA, MustFail: false, ByteCompare: true},
 		33: {TestVal: &FieldValueDateTimeMicroseconds{value: dateA}, CompVal: uint64(0), MustFail: true, ByteCompare: true},
 
-		34: {TestVal: &FieldValueDateTimeNanoseconds{value: dateA}, CompVal: dateA, MustFail: false, ByteCompare: true},
+		34: {TestVal: &FieldValueDateTimeNanoseconds{value: dateB}, CompVal: dateA, MustFail: false, ByteCompare: true},
 		35: {TestVal: &FieldValueDateTimeNanoseconds{value: dateA}, CompVal: uint64(0), MustFail: true, ByteCompare: true},
+
+		36: {TestVal: &FieldValueIPv4Address{value: net.IP{}}, CompVal: "127.0.0.1", MustFail: false, ByteCompare: true},
+		37: {TestVal: &FieldValueIPv4Address{value: net.IP{}}, CompVal: "An ip address", MustFail: true, ByteCompare: true},
+
+		38: {TestVal: &FieldValueIPv6Address{value: net.IP{}}, CompVal: "2001:db8::68", MustFail: false, ByteCompare: true},
+		39: {TestVal: &FieldValueIPv6Address{value: net.IP{}}, CompVal: "An ip address", MustFail: true, ByteCompare: true},
 	}
 
 	for _, testcase := range testset {
@@ -185,6 +193,12 @@ func TestMarshalEncoding(t *testing.T) {
 		27: {SourceVal: &FieldValueDateTimeMicroseconds{value: dateB}, CompEncoded: []byte{213, 255, 153, 144, 0, 0, 0, 0}, VariableLength: false},
 
 		28: {SourceVal: &FieldValueDateTimeNanoseconds{value: dateB}, CompEncoded: []byte{213, 255, 153, 144, 0, 0, 0, 0}, VariableLength: false},
+
+		29: {SourceVal: &FieldValueIPv4Address{value: net.ParseIP("127.0.0.1")}, CompEncoded: []byte{127, 0, 0, 1}, VariableLength: false},
+		30: {SourceVal: &FieldValueIPv4Address{value: net.ParseIP("1.2.3.4")}, CompEncoded: []byte{1, 2, 3, 4}, VariableLength: false},
+
+		31: {SourceVal: &FieldValueIPv6Address{value: net.ParseIP("2001:db8::68")}, CompEncoded: []byte{32, 1, 13, 184, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 104}, VariableLength: false},
+		32: {SourceVal: &FieldValueIPv6Address{value: net.ParseIP("1.2.3.4")}, CompEncoded: []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 1, 2, 3, 4}, VariableLength: false},
 	}
 
 	for _, testcase := range testset {
@@ -223,6 +237,8 @@ type fieldvalueMarshalUnmarshalTestcase struct {
 }
 
 func TestFieldValueMarshalUnmarshal(t *testing.T) {
+	dateC.Add(12345 * time.Nanosecond)
+
 	var testset = []fieldvalueMarshalUnmarshalTestcase{
 		0: {SourceVal: &FieldValueUnsigned8{value: 0}, DestVal: &FieldValueUnsigned8{value: 0}, CompVal: uint8(0)},
 		1: {SourceVal: &FieldValueUnsigned8{value: math.MaxUint8}, DestVal: &FieldValueUnsigned8{value: 0}, CompVal: uint8(math.MaxUint8)},
@@ -266,9 +282,14 @@ func TestFieldValueMarshalUnmarshal(t *testing.T) {
 
 		31: {SourceVal: &FieldValueDateTimeMicroseconds{value: dateA}, DestVal: &FieldValueDateTimeMicroseconds{value: time.Now()}, CompVal: dateA},
 		32: {SourceVal: &FieldValueDateTimeMicroseconds{value: dateB}, DestVal: &FieldValueDateTimeMicroseconds{value: time.Now()}, CompVal: dateB},
+		33: {SourceVal: &FieldValueDateTimeMicroseconds{value: dateC}, DestVal: &FieldValueDateTimeMicroseconds{value: time.Now()}, CompVal: dateC},
 
-		33: {SourceVal: &FieldValueDateTimeNanoseconds{value: dateA}, DestVal: &FieldValueDateTimeNanoseconds{value: time.Now()}, CompVal: dateA},
-		34: {SourceVal: &FieldValueDateTimeNanoseconds{value: dateB}, DestVal: &FieldValueDateTimeNanoseconds{value: time.Now()}, CompVal: dateB},
+		34: {SourceVal: &FieldValueDateTimeNanoseconds{value: dateA}, DestVal: &FieldValueDateTimeNanoseconds{value: time.Now()}, CompVal: dateA},
+		35: {SourceVal: &FieldValueDateTimeNanoseconds{value: dateB}, DestVal: &FieldValueDateTimeNanoseconds{value: time.Now()}, CompVal: dateB},
+		36: {SourceVal: &FieldValueDateTimeNanoseconds{value: dateC}, DestVal: &FieldValueDateTimeNanoseconds{value: time.Now()}, CompVal: dateC},
+
+		37: {SourceVal: &FieldValueIPv4Address{value: net.ParseIP("127.0.0.1").To4()}, DestVal: &FieldValueIPv4Address{value: net.ParseIP("10.0.0.1").To4()}, CompVal: net.ParseIP("127.0.0.1").To4()},
+		38: {SourceVal: &FieldValueIPv6Address{value: net.ParseIP("2001:db8::68").To16()}, DestVal: &FieldValueIPv6Address{value: net.ParseIP("10.0.0.1").To16()}, CompVal: net.ParseIP("2001:db8::68").To16()},
 	}
 
 	for _, testcase := range testset {

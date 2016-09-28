@@ -724,7 +724,7 @@ func (fv *FieldValueDateTimeMilliseconds) Set(val interface{}) error {
 
 /* */
 const (
-	epochDelta = 2208988800 // unix epoch = seconds since January 1, 1970 UTC,ntp epoch = seconds since January 1, 1900 UTC
+	epochDelta = 2208988800 // unix epoch = seconds since January 1, 1970 UTC,ntp prime epoch = seconds since January 1, 1900 UTC
 )
 
 // FieldValueDateTimeMicroseconds , "dateTimeMicroseconds" represents a time value expressed with microsecond-level precision.
@@ -739,10 +739,8 @@ type FieldValueDateTimeMicroseconds struct {
 
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
 func (fv *FieldValueDateTimeMicroseconds) MarshalBinary() ([]byte, error) {
-	baseValueNano := uint64(fv.value.UnixNano()) + uint64(epochDelta*1000000000) //Nano to NTP Epoch
-	marshalValueSeconds := baseValueNano / 1000000000
-	marshalValueFractions := ((baseValueNano - (marshalValueSeconds * 1000000000)) << 32) / 1000000000
-	marshalValue := make([]byte, 0, 0)
+	marshalValueSeconds := fv.value.Unix() + int64(epochDelta)
+	marshalValueFractions := ((uint64(fv.value.UnixNano()) % 1e9) << 32) / 1e9
 
 	marshalSec, err := marshalBinarySingleValue(uint32(marshalValueSeconds))
 	if err != nil {
@@ -753,12 +751,12 @@ func (fv *FieldValueDateTimeMicroseconds) MarshalBinary() ([]byte, error) {
 		return nil, err
 	}
 
+	marshalValue := make([]byte, 0, 0)
 	marshalValue = append(marshalValue, marshalSec...)
 	marshalValue = append(marshalValue, marshalFrac...)
 	if len(marshalValue) != 8 {
 		return nil, fmt.Errorf("Incorrect length when marshalling. Wanted %d, got %d.", 8, len(marshalValue))
 	}
-
 	return marshalValue, nil
 }
 
@@ -768,8 +766,7 @@ func (fv *FieldValueDateTimeMicroseconds) UnmarshalBinary(data []byte) error {
 		return fmt.Errorf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data))
 	}
 	baseValueSeconds := int64(binary.BigEndian.Uint32(data[:4])) - int64(epochDelta)
-	baseValueFractions := int64(binary.BigEndian.Uint32(data[4:])*1e9) >> 32
-
+	baseValueFractions := (int64(1+binary.BigEndian.Uint32(data[4:])) * 1e9) >> 32 //Yeah... that offset... for some reason it is necessary
 	fv.value = time.Unix(baseValueSeconds, baseValueFractions)
 	return nil
 }
@@ -810,10 +807,8 @@ type FieldValueDateTimeNanoseconds struct {
 
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
 func (fv *FieldValueDateTimeNanoseconds) MarshalBinary() ([]byte, error) {
-	baseValueNano := uint64(fv.value.UnixNano()) + uint64(epochDelta*1000000000) //Nano to NTP Epoch
-	marshalValueSeconds := baseValueNano / 1000000000
-	marshalValueFractions := ((baseValueNano - (marshalValueSeconds * 1000000000)) << 32) / 1000000000
-	marshalValue := make([]byte, 0, 0)
+	marshalValueSeconds := fv.value.Unix() + int64(epochDelta)
+	marshalValueFractions := ((uint64(fv.value.UnixNano()) % 1e9) << 32) / 1e9 //We only want the remainder of nanoseconds
 
 	marshalSec, err := marshalBinarySingleValue(uint32(marshalValueSeconds))
 	if err != nil {
@@ -824,12 +819,12 @@ func (fv *FieldValueDateTimeNanoseconds) MarshalBinary() ([]byte, error) {
 		return nil, err
 	}
 
+	marshalValue := make([]byte, 0, 0)
 	marshalValue = append(marshalValue, marshalSec...)
 	marshalValue = append(marshalValue, marshalFrac...)
 	if len(marshalValue) != 8 {
 		return nil, fmt.Errorf("Incorrect length when marshalling. Wanted %d, got %d.", 8, len(marshalValue))
 	}
-
 	return marshalValue, nil
 }
 
@@ -838,10 +833,9 @@ func (fv *FieldValueDateTimeNanoseconds) UnmarshalBinary(data []byte) error {
 	if len(data) < 8 {
 		return fmt.Errorf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data))
 	}
-	unmarshalSec := int64(binary.BigEndian.Uint32(data[:4])) - int64(epochDelta)
-	unmarshalFrac := int64(binary.BigEndian.Uint32(data[4:])*1e9) >> 32
-
-	fv.value = time.Unix(unmarshalSec, unmarshalFrac)
+	baseValueSeconds := int64(binary.BigEndian.Uint32(data[:4])) - int64(epochDelta)
+	baseValueFractions := (int64(1+binary.BigEndian.Uint32(data[4:])) * 1e9) >> 32 //Yeah... that offset... for some reason it is necessary
+	fv.value = time.Unix(baseValueSeconds, baseValueFractions)
 	return nil
 }
 
@@ -874,12 +868,17 @@ type FieldValueIPv4Address struct {
 
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
 func (fv *FieldValueIPv4Address) MarshalBinary() ([]byte, error) {
-	return nil, fmt.Errorf("Not yet implemented!")
+	content, err := marshalBinarySingleValue(fv.value.To4())
+	if err != nil {
+		return []byte{}, err
+	}
+	return content, nil
 }
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
 func (fv *FieldValueIPv4Address) UnmarshalBinary(data []byte) error {
-	return fmt.Errorf("Not yet implemented!")
+	fv.value = make([]byte, len(data))
+	return unmarshalBinaryOctets(data, &fv.value)
 }
 
 // Len returns the number of octets this FieldValue is wide
@@ -889,7 +888,25 @@ func (fv *FieldValueIPv4Address) Len() uint16 {
 
 // Value returns FieldValue's value
 func (fv *FieldValueIPv4Address) Value() interface{} {
-	return fv.value
+	return fv.value.To4()
+}
+
+// Set sets the FieldValue's value. Will return an error if the type is incorrect.
+func (fv *FieldValueIPv4Address) Set(val interface{}) error {
+	switch val.(type) {
+	case string:
+		tmpip := net.ParseIP(val.(string))
+		if tmpip != nil {
+			fv.value = tmpip
+		} else {
+			return fmt.Errorf("Value is not an IP Address: %s", val.(string))
+		}
+	case net.IP:
+		fv.value = val.(net.IP)
+	default:
+		return fmt.Errorf("Invalid type for %s", reflect.TypeOf(fv))
+	}
+	return nil
 }
 
 /* */
@@ -900,12 +917,17 @@ type FieldValueIPv6Address struct {
 
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
 func (fv *FieldValueIPv6Address) MarshalBinary() ([]byte, error) {
-	return nil, fmt.Errorf("Not yet implemented!")
+	content, err := marshalBinarySingleValue(fv.value.To16())
+	if err != nil {
+		return []byte{}, err
+	}
+	return content, nil
 }
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
 func (fv *FieldValueIPv6Address) UnmarshalBinary(data []byte) error {
-	return fmt.Errorf("Not yet implemented!")
+	fv.value = make([]byte, len(data))
+	return unmarshalBinaryOctets(data, &fv.value)
 }
 
 // Len returns the number of octets this FieldValue is wide
@@ -915,7 +937,25 @@ func (fv *FieldValueIPv6Address) Len() uint16 {
 
 // Value returns FieldValue's value
 func (fv *FieldValueIPv6Address) Value() interface{} {
-	return fv.value
+	return fv.value.To16()
+}
+
+// Set sets the FieldValue's value. Will return an error if the type is incorrect.
+func (fv *FieldValueIPv6Address) Set(val interface{}) error {
+	switch val.(type) {
+	case string:
+		tmpip := net.ParseIP(val.(string))
+		if tmpip != nil {
+			fv.value = tmpip
+		} else {
+			return fmt.Errorf("Value is not an IP Address: %s", val.(string))
+		}
+	case net.IP:
+		fv.value = val.(net.IP)
+	default:
+		return fmt.Errorf("Invalid type for %s", reflect.TypeOf(fv))
+	}
+	return nil
 }
 
 /* */
