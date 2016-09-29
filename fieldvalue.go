@@ -34,6 +34,21 @@ func unmarshalBinaryOctets(data []byte, val interface{}) error {
 	return binary.Read(buf, binary.BigEndian, val)
 }
 
+var (
+	// bufferfiller is used when the exporting process encodes a value in less bytes than real length. See below for explanation
+	bufferfiller = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+
+	//Reduced-size encoding MAY be applied to the following integer types:
+	//unsigned64, signed64, unsigned32, signed32, unsigned16, and signed16.
+	//The signed versus unsigned property of the reported value MUST be preserved.
+	//The reduction in size can be to any number of octets smaller than the original type if the data value still fits, i.e., so that only leading zeroes are dropped.  For example, an unsigned64 can be reduced in size to 7, 6, 5, 4, 3, 2, or 1 octet(s).
+
+	//Reduced-size encoding MAY be used to reduce float64 to float32.  The float32 not only has a reduced number range but, due to the smaller mantissa, is also less precise.
+	//In this case, the float64 would be reduced in size to 4 octets.
+
+	//Reduced-size encoding MUST NOT be applied to any other data type defined in [RFC7012] that implies a fixed length, as these types either have internal structure (such as ipv4Address or dateTimeMicroseconds) or restricted ranges that are not suitable for reduced-size encoding (such as dateTimeMilliseconds).
+)
+
 /* */
 // FieldValueUnsigned8 , "unsigned8" represents a non-negative integer value in the range of 0 to 255.
 type FieldValueUnsigned8 struct {
@@ -88,10 +103,14 @@ func (fv *FieldValueUnsigned16) MarshalBinary() ([]byte, error) {
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
 func (fv *FieldValueUnsigned16) UnmarshalBinary(data []byte) error {
-	if len(data) < 2 {
+	if len(data) < 1 {
 		return fmt.Errorf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data))
+	} else if len(data) < 2 {
+		//We prepend 0s if the exporter encoded it in less bytes than we need
+		fv.value = binary.BigEndian.Uint16(append(bufferfiller[:1], data...))
+	} else {
+		fv.value = binary.BigEndian.Uint16(data)
 	}
-	fv.value = binary.BigEndian.Uint16(data)
 	return nil
 }
 
@@ -129,10 +148,14 @@ func (fv *FieldValueUnsigned32) MarshalBinary() ([]byte, error) {
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
 func (fv *FieldValueUnsigned32) UnmarshalBinary(data []byte) error {
-	if len(data) < 4 {
+	if len(data) < 1 {
 		return fmt.Errorf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data))
+	} else if len(data) < 4 {
+		//We prepend 0s if the exporter encoded it in less bytes than we need
+		fv.value = binary.BigEndian.Uint32(append(bufferfiller[:4-len(data)], data...))
+	} else {
+		fv.value = binary.BigEndian.Uint32(data)
 	}
-	fv.value = binary.BigEndian.Uint32(data)
 	return nil
 }
 
@@ -170,10 +193,14 @@ func (fv *FieldValueUnsigned64) MarshalBinary() ([]byte, error) {
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
 func (fv *FieldValueUnsigned64) UnmarshalBinary(data []byte) error {
-	if len(data) < 8 {
+	if len(data) < 1 {
 		return fmt.Errorf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data))
+	} else if len(data) < 8 {
+		//We prepend 0s if the exporter encoded it in less bytes than we need
+		fv.value = binary.BigEndian.Uint64(append(bufferfiller[:8-len(data)], data...))
+	} else {
+		fv.value = binary.BigEndian.Uint64(data)
 	}
-	fv.value = binary.BigEndian.Uint64(data)
 	return nil
 }
 
@@ -252,10 +279,14 @@ func (fv *FieldValueSigned16) MarshalBinary() ([]byte, error) {
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
 func (fv *FieldValueSigned16) UnmarshalBinary(data []byte) error {
-	if len(data) < 2 {
+	if len(data) < 1 {
 		return fmt.Errorf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data))
+	} else if len(data) < 2 {
+		//We prepend 0s if the exporter encoded it in less bytes than we need
+		fv.value = int16(binary.BigEndian.Uint16(append(bufferfiller[:2-len(data)], data...)))
+	} else {
+		fv.value = int16(binary.BigEndian.Uint16(data))
 	}
-	fv.value = int16(binary.BigEndian.Uint16(data))
 	return nil
 }
 
@@ -293,10 +324,14 @@ func (fv *FieldValueSigned32) MarshalBinary() ([]byte, error) {
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
 func (fv *FieldValueSigned32) UnmarshalBinary(data []byte) error {
-	if len(data) < 4 {
+	if len(data) < 1 {
 		return fmt.Errorf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data))
+	} else if len(data) < 4 {
+		//We prepend 0s if the exporter encoded it in less bytes than we need
+		fv.value = int32(binary.BigEndian.Uint32(append(bufferfiller[:4-len(data)], data...)))
+	} else {
+		fv.value = int32(binary.BigEndian.Uint32(data))
 	}
-	fv.value = int32(binary.BigEndian.Uint32(data))
 	return nil
 }
 
@@ -334,10 +369,14 @@ func (fv *FieldValueSigned64) MarshalBinary() ([]byte, error) {
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
 func (fv *FieldValueSigned64) UnmarshalBinary(data []byte) error {
-	if len(data) < 8 {
+	if len(data) < 1 {
 		return fmt.Errorf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data))
+	} else if len(data) < 8 {
+		//We prepend 0s if the exporter encoded it in less bytes than we need
+		fv.value = int64(binary.BigEndian.Uint64(append(bufferfiller[:8-len(data)], data...)))
+	} else {
+		fv.value = int64(binary.BigEndian.Uint64(data))
 	}
-	fv.value = int64(binary.BigEndian.Uint64(data))
 	return nil
 }
 
@@ -416,10 +455,15 @@ func (fv *FieldValueFloat64) MarshalBinary() ([]byte, error) {
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
 func (fv *FieldValueFloat64) UnmarshalBinary(data []byte) error {
-	if len(data) < 8 {
+	if len(data) < 4 {
+		return fmt.Errorf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data))
+	} else if len(data) == 4 {
+		fv.value = float64(math.Float32frombits(binary.BigEndian.Uint32(data)))
+	} else if len(data) == 8 {
+		fv.value = math.Float64frombits(binary.BigEndian.Uint64(data))
+	} else {
 		return fmt.Errorf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data))
 	}
-	fv.value = math.Float64frombits(binary.BigEndian.Uint64(data))
 	return nil
 }
 
@@ -548,11 +592,11 @@ type FieldValueOctetArray struct {
 
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
 func (fv *FieldValueOctetArray) MarshalBinary() ([]byte, error) {
-	content, err := marshalBinarySingleValue(fv.value)
+	marshalValue, err := marshalBinarySingleValue(fv.value)
 	if err != nil {
 		return []byte{}, err
 	}
-	return content, nil
+	return marshalValue, nil
 }
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
@@ -868,11 +912,11 @@ type FieldValueIPv4Address struct {
 
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
 func (fv *FieldValueIPv4Address) MarshalBinary() ([]byte, error) {
-	content, err := marshalBinarySingleValue(fv.value.To4())
+	marshalValue, err := marshalBinarySingleValue(fv.value.To4())
 	if err != nil {
 		return []byte{}, err
 	}
-	return content, nil
+	return marshalValue, nil
 }
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
@@ -917,11 +961,11 @@ type FieldValueIPv6Address struct {
 
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
 func (fv *FieldValueIPv6Address) MarshalBinary() ([]byte, error) {
-	content, err := marshalBinarySingleValue(fv.value.To16())
+	marshalValue, err := marshalBinarySingleValue(fv.value.To16())
 	if err != nil {
 		return []byte{}, err
 	}
-	return content, nil
+	return marshalValue, nil
 }
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
@@ -966,11 +1010,82 @@ type FieldValueBasicList struct {
 
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
 func (fv *FieldValueBasicList) MarshalBinary() ([]byte, error) {
-	return nil, fmt.Errorf("Not yet implemented!")
+	marshalValue := make([]byte, 0, 0)
+	marshalValue = append(marshalValue, fv.value.Semantic)
+	marshalFieldID, err := marshalBinarySingleValue(fv.value.InformationElementIdentifier)
+	if err != nil {
+		return nil, err
+	}
+	if fv.value.E {
+		marshalFieldID[0] = marshalFieldID[0] | 128 //Setting the EnterpriseID bit
+	}
+	marshalValue = append(marshalValue, marshalFieldID...)
+	marshalFieldLength, err := marshalBinarySingleValue(fv.value.FieldLength)
+	if err != nil {
+		return nil, err
+	}
+	marshalValue = append(marshalValue, marshalFieldLength...)
+	if fv.value.E {
+		marshalEnterpriseID, err := marshalBinarySingleValue(fv.value.EnterpriseNumber)
+		if err != nil {
+			return nil, err
+		}
+		marshalValue = append(marshalValue, marshalEnterpriseID...)
+	}
+
+	for _, listitem := range fv.value.FieldValues {
+		itemdata, err := listitem.MarshalBinary()
+		if err != nil {
+			return nil, err
+		}
+		if fv.value.FieldLength == VariableLength {
+			var marshalLength []byte
+			switch listitem.(type) {
+			case *FieldValueBasicList /*, *FieldValueSubTemplateList, *FieldValueSubTemplateMultiList*/ :
+				marshalLength, err = EncodeVariableLength(itemdata, true)
+				if err != nil {
+					return nil, err
+				}
+
+			default:
+				marshalLength, err = EncodeVariableLength(itemdata, false)
+				if err != nil {
+					return nil, err
+				}
+			}
+			marshalValue = append(marshalValue, marshalLength...)
+		}
+		marshalValue = append(marshalValue, itemdata...)
+	}
+
+	return marshalValue, nil
 }
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
 func (fv *FieldValueBasicList) UnmarshalBinary(data []byte) error {
+	/*fv.value = BasicList{}
+
+	fv.value.Semantic = data[0]
+	if (data[1] & 128) != 0 {
+		fv.value.E = true
+		data[1] = data[1] & 127 //Remove the bit
+	}
+	fv.value.InformationElementIdentifier = binary.BigEndian.Uint16(data[1:3])
+	fv.value.FieldLength == binary.BigEndian.Uint16(data[3:5])
+
+	cursor := int(5)
+	if fv.value.E {
+		fv.value.EnterpriseNumber = binary.BigEndian.Uint32(data[cursor : cursor+4])
+		cursor += 4
+	}
+		for cursor < len(data) {
+			if fv.value.FieldLength == VariableLength {
+
+			} else {
+				fv
+			}
+		}
+	*/
 	return fmt.Errorf("Not yet implemented!")
 }
 
@@ -982,6 +1097,17 @@ func (fv *FieldValueBasicList) Len() uint16 {
 // Value returns FieldValue's value
 func (fv *FieldValueBasicList) Value() interface{} {
 	return fv.value
+}
+
+// Set sets the FieldValue's value. Will return an error if the type is incorrect.
+func (fv *FieldValueBasicList) Set(val interface{}) error {
+	switch val.(type) {
+	case BasicList:
+		fv.value = val.(BasicList)
+	default:
+		return fmt.Errorf("Invalid type for %s", reflect.TypeOf(fv))
+	}
+	return nil
 }
 
 /* */

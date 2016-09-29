@@ -62,6 +62,46 @@ var (
 	dateB, _ = time.Parse(time.RFC822, "09 Oct 13 10:00 CET")
 	//dateC, _ = time.Parse(time.RFC822, "07 Dec 70 10:00 CET")
 	dateC = time.Unix(int64(29408400), int64(502219461))
+
+	basicListA = BasicList{
+		Semantic: AllOf,
+		E:        false,
+		InformationElementIdentifier: 12,
+		EnterpriseNumber:             0,
+		FieldLength:                  4,
+
+		FieldValues: []FieldValue{
+			0: &FieldValueIPv4Address{value: net.ParseIP("127.0.0.1")},
+			1: &FieldValueIPv4Address{value: net.ParseIP("8.8.8.8")},
+		},
+	}
+
+	basicListB = BasicList{
+		Semantic: AllOf,
+		E:        true,
+		InformationElementIdentifier: 11,
+		EnterpriseNumber:             44913,
+		FieldLength:                  4,
+
+		FieldValues: []FieldValue{
+			0: &FieldValueIPv4Address{value: net.ParseIP("127.0.0.1")},
+			1: &FieldValueIPv4Address{value: net.ParseIP("8.8.8.8")},
+		},
+	}
+
+	basicListC = BasicList{
+		Semantic: NoneOf,
+		E:        true,
+		InformationElementIdentifier: 21,
+		EnterpriseNumber:             44913,
+		FieldLength:                  VariableLength,
+
+		FieldValues: []FieldValue{
+			0: &FieldValueString{value: "/favicon.ico"},
+			1: &FieldValueString{value: "/stylesheet.css"},
+			2: &FieldValueString{value: string(largeOctetArray(300))}, //Needed to test length encoding
+		},
+	}
 )
 
 type fieldvalueSetGetTestcase struct {
@@ -125,6 +165,9 @@ func TestFieldValueSetGet(t *testing.T) {
 
 		38: {TestVal: &FieldValueIPv6Address{value: net.IP{}}, CompVal: "2001:db8::68", MustFail: false, ByteCompare: true},
 		39: {TestVal: &FieldValueIPv6Address{value: net.IP{}}, CompVal: "An ip address", MustFail: true, ByteCompare: true},
+
+		40: {TestVal: &FieldValueBasicList{value: BasicList{}}, CompVal: basicListA, MustFail: false, ByteCompare: true},
+		41: {TestVal: &FieldValueBasicList{value: BasicList{}}, CompVal: "Two eggs, a pound of cheese, butter", MustFail: true, ByteCompare: true},
 	}
 
 	for _, testcase := range testset {
@@ -199,6 +242,11 @@ func TestMarshalEncoding(t *testing.T) {
 
 		31: {SourceVal: &FieldValueIPv6Address{value: net.ParseIP("2001:db8::68")}, CompEncoded: []byte{32, 1, 13, 184, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 104}, VariableLength: false},
 		32: {SourceVal: &FieldValueIPv6Address{value: net.ParseIP("1.2.3.4")}, CompEncoded: []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 1, 2, 3, 4}, VariableLength: false},
+
+		33: {SourceVal: &FieldValueBasicList{value: basicListA}, CompEncoded: []byte{3, 0, 12, 0, 4, 127, 0, 0, 1, 8, 8, 8, 8}, VariableLength: false},
+		34: {SourceVal: &FieldValueBasicList{value: basicListB}, CompEncoded: []byte{3, 128, 11, 0, 4, 0, 0, 175, 113, 127, 0, 0, 1, 8, 8, 8, 8}, VariableLength: false},
+		35: {SourceVal: &FieldValueBasicList{value: basicListC},
+			CompEncoded: append([]byte{0, 128, 21, 255, 255, 0, 0, 175, 113, 12, 47, 102, 97, 118, 105, 99, 111, 110, 46, 105, 99, 111, 15, 47, 115, 116, 121, 108, 101, 115, 104, 101, 101, 116, 46, 99, 115, 115, 255, 1, 44}, largeOctetArray(300)...), VariableLength: false},
 	}
 
 	for _, testcase := range testset {
@@ -208,7 +256,7 @@ func TestMarshalEncoding(t *testing.T) {
 		}
 		lendata := []byte{}
 		if testcase.VariableLength {
-			lendata, err = EncodeVariableLength(binarydata)
+			lendata, err = EncodeVariableLength(binarydata, false)
 			if err != nil {
 				t.Errorf("Error encoding variable size %#v: %#v", testcase.SourceVal, err)
 			}

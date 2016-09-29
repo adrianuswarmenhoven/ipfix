@@ -15,12 +15,12 @@ Auxillary functions
 // The length may also be encoded into 3 octets before the Information Element, allowing the length of the Information Element to be greater than or equal to 255 octets.
 // In this case, the first octet of the Length field MUST be 255, and the length is carried in the second and third octets.
 // The octets carrying the length (either the first or the first three octets) MUST NOT be included in the length of the Information Element.
-func EncodeVariableLength(content []byte) ([]byte, error) {
+func EncodeVariableLength(content []byte, rfc6313recommended bool) ([]byte, error) {
 	retval := []byte{}
 	if len(content) < 255 {
 		retval = []byte{uint8(len(content))}
 	} else {
-		if len(content) > 65535 {
+		if rfc6313recommended || len(content) > 65535 {
 			return []byte{}, fmt.Errorf("Content too large, maximum of 65535 octets, but it is %d", len(content))
 		}
 		lengthBytes := []byte{255}
