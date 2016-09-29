@@ -169,7 +169,7 @@ func main() {
 
 func init() {
 	sourcefetchers = append(sourcefetchers, FetchIANA)
-	sourcefetchers = append(sourcefetchers, FetchSecDorks)
+	sourcefetchers = append(sourcefetchers, FetchIPFIXColStyle)
 }
 
 func FetchURL(fetchurl string) string {
@@ -239,10 +239,13 @@ func FetchIANA() {
 	}
 }
 
-// FetchSecDorks gets it's data from https://raw.githubusercontent.com/SecDorks/ipfixcol/master/base/config/ipfix-elements.xml
-func FetchSecDorks() {
-	const (
-		SecDorksIPFIXAssignments = "https://raw.githubusercontent.com/SecDorks/ipfixcol/master/base/config/ipfix-elements.xml"
+// FetchIPFIXColStyle gets it's data from https://raw.githubusercontent.com/CESNET/ipfixcol/master/base/config/ipfix-elements.xml and others
+func FetchIPFIXColStyle() {
+	var (
+		IPFIXColStyleXML = []string{
+			0:"https://raw.githubusercontent.com/SecDorks/ipfixcol/master/base/config/ipfix-elements.xml",
+			1:"https://raw.githubusercontent.com/CESNET/ipfixcol/master/base/config/ipfix-elements.xml",
+		}
 	)
 	type Element struct {
 		XMLName xml.Name `xml:"element"`
@@ -258,9 +261,9 @@ func FetchSecDorks() {
 
 		Element []Element `xml:"element"`
 	}
-
+for _,fetchurl:=range IPFIXColStyleXML{
 	elements := IPFixElementsList{}
-	sanitizestring := FetchURL(SecDorksIPFIXAssignments)
+	sanitizestring := FetchURL(fetchurl)
 	sanitizestring = strings.Map(func(check rune) rune {
 		switch check {
 		case '\n', '\r':
@@ -282,11 +285,12 @@ func FetchSecDorks() {
 					ElementID != 0 && EnterpriseID != 0 {
 					if _, exists := elementsmap[int(EnterpriseID)]; !exists {
 						elementsmap[int(EnterpriseID)] = make(map[int]fieldvalueelement)
-						sources[int(EnterpriseID)] = "SecDorks - https://raw.githubusercontent.com/SecDorks/ipfixcol/master/base/config/ipfix-elements.xml"
+						sources[int(EnterpriseID)] = "IPFIXColStyle - "+fetchurl
 					}
 					elementsmap[int(EnterpriseID)][int(ElementID)] = fieldvalueelement{Name: el.Name, DataType: el.DataType, ElementID: int(ElementID)}
 				}
 			}
 		}
 	}
+}
 }

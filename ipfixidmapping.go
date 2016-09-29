@@ -868,7 +868,209 @@ func NewFieldValueByID(enterpriseid int, elementid int) (FieldValue, error) {
 			return nil, fmt.Errorf("No such element: E%did%d", enterpriseid, elementid)
 		}
 
-	case 35632: // SecDorks - https://raw.githubusercontent.com/SecDorks/ipfixcol/master/base/config/ipfix-elements.xml
+	case 8057: // IPFIXColStyle - https://raw.githubusercontent.com/CESNET/ipfixcol/master/base/config/ipfix-elements.xml
+
+		switch elementid {
+		case 1:
+			return &FieldValueUnsigned8{}, nil // DNSRCode
+		case 2:
+			return &FieldValueString{}, nil // DNSName
+		case 3:
+			return &FieldValueUnsigned16{}, nil // DNSQType
+		case 4:
+			return &FieldValueUnsigned16{}, nil // DNSClass
+		case 5:
+			return &FieldValueUnsigned32{}, nil // DNSRRTTL
+		case 6:
+			return &FieldValueUnsigned16{}, nil // DNSRDataLength
+		case 7:
+			return &FieldValueString{}, nil // DNSRData
+		case 8:
+			return &FieldValueUnsigned16{}, nil // DNSPSIZE
+		case 9:
+			return &FieldValueUnsigned8{}, nil // DNSRDO
+		case 10:
+			return &FieldValueUnsigned16{}, nil // DNSTransactionID
+		case 700:
+			return &FieldValueUnsigned8{}, nil // HBType
+		case 701:
+			return &FieldValueUnsigned8{}, nil // HBDir
+		case 702:
+			return &FieldValueUnsigned16{}, nil // HBSizeMsg
+		case 703:
+			return &FieldValueUnsigned16{}, nil // HBSizePayload
+		case 800:
+			return &FieldValueUnsigned32{}, nil // HTTPRequestMethod
+		case 801:
+			return &FieldValueString{}, nil // HTTPRequestHost
+		case 802:
+			return &FieldValueString{}, nil // HTTPRequestURL
+		case 803:
+			return &FieldValueString{}, nil // HTTPRequestReferer
+		case 804:
+			return &FieldValueString{}, nil // HTTPRequestAgent
+		case 805:
+			return &FieldValueUnsigned32{}, nil // HTTPResponseCode
+		case 806:
+			return &FieldValueString{}, nil // HTTPResponseType
+		case 807:
+			return &FieldValueUnsigned64{}, nil // HTTPResponseTime
+		case 808:
+			return &FieldValueString{}, nil // HTTPSHost
+		case 809:
+			return &FieldValueUnsigned64{}, nil // HTTPSResponseTime
+		case 810:
+			return &FieldValueUnsigned32{}, nil // SMTPCommands
+		case 811:
+			return &FieldValueUnsigned32{}, nil // SMTPMailCount
+		case 812:
+			return &FieldValueUnsigned32{}, nil // SMTPRcptCount
+		case 813:
+			return &FieldValueString{}, nil // SMTPSender
+		case 814:
+			return &FieldValueString{}, nil // SMTPRecipient
+		case 815:
+			return &FieldValueUnsigned32{}, nil // SMTPStatusCodes
+		case 816:
+			return &FieldValueUnsigned32{}, nil // SMTPCode2XXCount
+		case 817:
+			return &FieldValueUnsigned32{}, nil // SMTPCode3XXCount
+		case 818:
+			return &FieldValueUnsigned32{}, nil // SMTPCode4XXCount
+		case 819:
+			return &FieldValueUnsigned32{}, nil // SMTPCode5XXCount
+		case 820:
+			return &FieldValueString{}, nil // SMTPDomain
+		case 821:
+			return &FieldValueString{}, nil // HTTPRequestRange
+		case 830:
+			return &FieldValueUnsigned32{}, nil // SIPMethod
+		case 831:
+			return &FieldValueUnsigned32{}, nil // SIPStatusCode
+		case 832:
+			return &FieldValueString{}, nil // SIPRequestURI
+		case 833:
+			return &FieldValueString{}, nil // SIPFrom
+		case 834:
+			return &FieldValueString{}, nil // SIPTo
+		case 835:
+			return &FieldValueString{}, nil // SIPContact
+		case 836:
+			return &FieldValueString{}, nil // SIPVia
+		case 837:
+			return &FieldValueString{}, nil // SIPRoute
+		case 838:
+			return &FieldValueString{}, nil // SIPRecordRoute
+		default:
+			return nil, fmt.Errorf("No such element: E%did%d", enterpriseid, elementid)
+		}
+
+	case 16982: // IPFIXColStyle - https://raw.githubusercontent.com/CESNET/ipfixcol/master/base/config/ipfix-elements.xml
+
+		switch elementid {
+		case 1:
+			return &FieldValueUnsigned8{}, nil // destinationGeo
+		case 100:
+			return &FieldValueUnsigned8{}, nil // HTTPUserAgent
+		case 101:
+			return &FieldValueUnsigned8{}, nil // HTTPMethod
+		case 102:
+			return &FieldValueString{}, nil // HTTPDomain
+		case 103:
+			return &FieldValueString{}, nil // HTTPReferer
+		case 104:
+			return &FieldValueUnsigned8{}, nil // HTTPContentType
+		case 105:
+			return &FieldValueString{}, nil // HTTPUrl
+		case 106:
+			return &FieldValueUnsigned16{}, nil // HTTPStatus
+		case 107:
+			return &FieldValueUnsigned16{}, nil // HTTPHeaderCount
+		case 200:
+			return &FieldValueUnsigned32{}, nil // appPID
+		case 201:
+			return &FieldValueString{}, nil // appName
+		case 202:
+			return &FieldValueUnsigned32{}, nil // appUID
+		case 203:
+			return &FieldValueUnsigned8{}, nil // appMatchLevel
+		case 400:
+			return &FieldValueIPv6Address{}, nil // tunnelSrcIPv6
+		case 401:
+			return &FieldValueIPv6Address{}, nil // tunnelDstIPv6
+		case 402:
+			return &FieldValueUnsigned16{}, nil // tunnelSrcPort
+		case 403:
+			return &FieldValueUnsigned16{}, nil // tunnelDstPort
+		case 404:
+			return &FieldValueUnsigned8{}, nil // tunnelProtocol
+		case 405:
+			return &FieldValueUnsigned8{}, nil // tunnelType
+		case 406:
+			return &FieldValueUnsigned8{}, nil // tunnelTCPFlags
+		case 407:
+			return &FieldValueUnsigned16{}, nil // tunnelICMPcode
+		case 408:
+			return &FieldValueUnsigned8{}, nil // tunnelTeredoHeaders
+		case 409:
+			return &FieldValueUnsigned8{}, nil // tunnelTeredoTrailers
+		case 410:
+			return &FieldValueString{}, nil // tunnelSourceGeo
+		case 411:
+			return &FieldValueString{}, nil // tunnelDestinationGeo
+		case 412:
+			return &FieldValueString{}, nil // tunnelOuterSourceGeo
+		case 413:
+			return &FieldValueString{}, nil // tunnelOuterDestinationGeo
+		case 414:
+			return &FieldValueUnsigned8{}, nil // tunnelHOPLimit
+		case 500:
+			return &FieldValueUnsigned32{}, nil // HTTPRequestType
+		case 501:
+			return &FieldValueString{}, nil // HTTPRequestHost
+		case 502:
+			return &FieldValueString{}, nil // HTTPRequestURL
+		case 503:
+			return &FieldValueUnsigned32{}, nil // HTTPRequestAgentID
+		case 504:
+			return &FieldValueString{}, nil // HTTPRequestAgent
+		case 505:
+			return &FieldValueString{}, nil // HTTPRequestReferer
+		case 506:
+			return &FieldValueUnsigned32{}, nil // HTTPResponseCode
+		case 507:
+			return &FieldValueString{}, nil // HTTPResponseType
+		case 508:
+			return &FieldValueUnsigned32{}, nil // HTTPResponseTime
+		case 800:
+			return &FieldValueUnsigned16{}, nil // tlsCliVer
+		case 801:
+			return &FieldValueUnsigned16{}, nil // tlsSerVer
+		case 802:
+			return &FieldValueUnsigned16{}, nil // tlsSerCips
+		case 803:
+			return &FieldValueOctetArray{}, nil // tlsCliCips
+		case 804:
+			return &FieldValueString{}, nil // tlsCertSubject
+		case 805:
+			return &FieldValueString{}, nil // tlsCertIssuer
+		case 806:
+			return &FieldValueUnsigned64{}, nil // tlsCertNotBefore
+		case 807:
+			return &FieldValueUnsigned64{}, nil // tlsCerNotAfter
+		case 808:
+			return &FieldValueUnsigned16{}, nil // tlsPkeyLength
+		case 809:
+			return &FieldValueUnsigned32{}, nil // tlsPkeyExponent
+		case 810:
+			return &FieldValueString{}, nil // tlsPkeyAlgorithm
+		case 811:
+			return &FieldValueString{}, nil // tlsServerName
+		default:
+			return nil, fmt.Errorf("No such element: E%did%d", enterpriseid, elementid)
+		}
+
+	case 35632: // IPFIXColStyle - https://raw.githubusercontent.com/SecDorks/ipfixcol/master/base/config/ipfix-elements.xml
 
 		switch elementid {
 		case 180:
@@ -879,7 +1081,7 @@ func NewFieldValueByID(enterpriseid int, elementid int) (FieldValue, error) {
 			return nil, fmt.Errorf("No such element: E%did%d", enterpriseid, elementid)
 		}
 
-	case 39499: // SecDorks - https://raw.githubusercontent.com/SecDorks/ipfixcol/master/base/config/ipfix-elements.xml
+	case 39499: // IPFIXColStyle - https://raw.githubusercontent.com/SecDorks/ipfixcol/master/base/config/ipfix-elements.xml
 
 		switch elementid {
 		case 1:
@@ -1016,7 +1218,7 @@ func NewFieldValueByID(enterpriseid int, elementid int) (FieldValue, error) {
 			return nil, fmt.Errorf("No such element: E%did%d", enterpriseid, elementid)
 		}
 
-	case 44913: // SecDorks - https://raw.githubusercontent.com/SecDorks/ipfixcol/master/base/config/ipfix-elements.xml
+	case 44913: // IPFIXColStyle - https://raw.githubusercontent.com/SecDorks/ipfixcol/master/base/config/ipfix-elements.xml
 
 		switch elementid {
 		case 10:
