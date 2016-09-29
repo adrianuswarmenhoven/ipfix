@@ -1063,7 +1063,8 @@ func (fv *FieldValueBasicList) MarshalBinary() ([]byte, error) {
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
 func (fv *FieldValueBasicList) UnmarshalBinary(data []byte) error {
-	/*fv.value = BasicList{}
+	fv.value = BasicList{}
+	fv.value.FieldValues = make([]FieldValue, 0, 0)
 
 	fv.value.Semantic = data[0]
 	if (data[1] & 128) != 0 {
@@ -1071,22 +1072,35 @@ func (fv *FieldValueBasicList) UnmarshalBinary(data []byte) error {
 		data[1] = data[1] & 127 //Remove the bit
 	}
 	fv.value.InformationElementIdentifier = binary.BigEndian.Uint16(data[1:3])
-	fv.value.FieldLength == binary.BigEndian.Uint16(data[3:5])
+	if fv.value.E {
+		data[1] = data[1] | 128 //Restore the bit (so we keep the original datablob)
+	}
+	fv.value.FieldLength = binary.BigEndian.Uint16(data[3:5])
 
 	cursor := int(5)
 	if fv.value.E {
 		fv.value.EnterpriseNumber = binary.BigEndian.Uint32(data[cursor : cursor+4])
 		cursor += 4
 	}
-		for cursor < len(data) {
-			if fv.value.FieldLength == VariableLength {
 
-			} else {
-				fv
+	for cursor+int(fv.value.FieldLength) <= len(data) {
+		if fv.value.FieldLength == VariableLength {
+FIXME!
+		} else {
+			newval, err := NewFieldValueByID(int(fv.value.EnterpriseNumber), int(fv.value.InformationElementIdentifier))
+			if err != nil {
+				return err
 			}
+			err = newval.UnmarshalBinary(data[cursor : cursor+int(fv.value.FieldLength)])
+			if err != nil {
+				return err
+			}
+			cursor += int(fv.value.FieldLength)
+			fv.value.FieldValues = append(fv.value.FieldValues, newval)
 		}
-	*/
-	return fmt.Errorf("Not yet implemented!")
+	}
+
+	return nil
 }
 
 // Len returns the number of octets this FieldValue is wide

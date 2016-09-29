@@ -45,19 +45,3 @@ func (blst *BasicList) Len() uint16 {
 	}
 	return bllen
 }
-
-// MarshalBinary satisfies the encoding/BinaryMarshaler interface
-// BUG(aw): NOT IMPLEMENTED
-func (blst *BasicList) MarshalBinary() (data []byte, err error) {
-	return nil, fmt.Errorf("Not yet implemented!")
-}
-
-// UnmarshalBinary satisfies the encoding/BinaryUnmarshaler interface
-// BUG(aw): NOT IMPLEMENTED
-func (blst *BasicList) UnmarshalBinary(data []byte) error {
-	if data == nil || len(data) == 0 {
-		return fmt.Errorf("Can not unmarshal, invalid data. %#v", data)
-	}
-
-	return fmt.Errorf("Not yet implemented!")
-}

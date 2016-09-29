@@ -360,6 +360,37 @@ func TestFieldValueMarshalUnmarshal(t *testing.T) {
 		}
 	}
 }
+func TestFieldValueMarshalUnmarshalComplex(t *testing.T) {
+	dateC.Add(12345 * time.Nanosecond)
+
+	var testset = []fieldvalueMarshalUnmarshalTestcase{
+
+		0: {SourceVal: &FieldValueBasicList{value: basicListA}, DestVal: &FieldValueBasicList{}, CompVal: []byte{3, 0, 12, 0, 4, 127, 0, 0, 1, 8, 8, 8, 8}},
+		1: {SourceVal: &FieldValueBasicList{value: basicListB}, DestVal: &FieldValueBasicList{}, CompVal: []byte{3, 128, 11, 0, 4, 0, 0, 175, 113, 127, 0, 0, 1, 8, 8, 8, 8}},
+		//		2: {SourceVal: &FieldValueBasicList{value: basicListC}, DestVal: &FieldValueBasicList{}, CompVal: append([]byte{0, 128, 21, 255, 255, 0, 0, 175, 113, 12, 47, 102, 97, 118, 105, 99, 111, 110, 46, 105, 99, 111, 15, 47, 115, 116, 121, 108, 101, 115, 104, 101, 101, 116, 46, 99, 115, 115, 255, 1, 44}, largeOctetArray(300)...)},
+	}
+	for _, testcase := range testset {
+		binarydata, err := testcase.SourceVal.MarshalBinary()
+		if err != nil {
+			t.Errorf("Error marshalling %#v: %#v", testcase.SourceVal, err)
+		}
+		if len(binarydata) != int(testcase.SourceVal.Len()) {
+			t.Errorf("Error marshalling %#v: length of binary data should be %d, but was %d", testcase.SourceVal, testcase.SourceVal.Len(), len(binarydata))
+		}
+		err = testcase.DestVal.UnmarshalBinary(binarydata)
+		if err != nil {
+			t.Errorf("Error unmarshalling %#v: %#v", testcase.SourceVal, err)
+		}
+		compbinarydata, err := testcase.DestVal.MarshalBinary()
+		if err != nil {
+			t.Errorf("Error marshalling %#v: %#v", testcase.DestVal, err)
+		}
+		if !reflect.DeepEqual(binarydata, compbinarydata) {
+			t.Errorf("Error in value after conversions, wanted %#v (%#v), but got %#v", testcase.SourceVal, testcase.CompVal, testcase.DestVal)
+			fmt.Println(binarydata, compbinarydata)
+		}
+	}
+}
 
 //goTypeName is a helper function
 func goTypeName(fv interface{}) int {
