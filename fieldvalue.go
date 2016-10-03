@@ -184,7 +184,7 @@ func (fv *FieldValueUnsigned32) Set(val interface{}) error {
 // FieldValueUnsigned64 , "unsigned64" represents a non-negative integer value in the range of 0 to 18446744073709551615
 type FieldValueUnsigned64 struct {
 	value uint64
-}
+} // The TemplateRecord points to the field types
 
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
 func (fv *FieldValueUnsigned64) MarshalBinary() ([]byte, error) {
@@ -1048,7 +1048,7 @@ func (fv *FieldValueBasicList) MarshalBinary() ([]byte, error) {
 				}
 
 			default:
-				marshalLength, err = EncodeVariableLength(itemdata, true)
+				marshalLength, err = EncodeVariableLength(itemdata, false)
 				if err != nil {
 					return nil, err
 				}
@@ -1146,12 +1146,35 @@ type FieldValueSubTemplateList struct {
 
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
 func (fv *FieldValueSubTemplateList) MarshalBinary() ([]byte, error) {
-	return nil, fmt.Errorf("Not yet implemented!")
+	marshalValue := make([]byte, 0, 0)
+	marshalValue = append(marshalValue, fv.value.Semantic)
+
+	marshalTemplateID, err := marshalBinarySingleValue(fv.value.TemplateID)
+	if err != nil {
+		return nil, err
+	}
+	marshalValue = append(marshalValue, marshalTemplateID...)
+	/*
+		//Fetching all the marshalled records
+		for _, listitem := range fv.value.Records {
+			recordBinary, err := listitem.MarshalBinary()
+			if err != nil {
+				return nil, err
+			}
+			marshalValue = append(marshalValue, recordBinary...)
+		}*/
+
+	return marshalValue, nil
 }
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
 func (fv *FieldValueSubTemplateList) UnmarshalBinary(data []byte) error {
-	return fmt.Errorf("Not yet implemented!")
+	fv.value = SubTemplateList{}
+	fv.value.Records = make([]Record, 0, 0)
+
+	fv.value.Semantic = data[0]
+	fv.value.TemplateID = binary.BigEndian.Uint16(data[1:3])
+	return nil
 }
 
 // Len returns the number of octets this FieldValue is wide
@@ -1162,6 +1185,17 @@ func (fv *FieldValueSubTemplateList) Len() uint16 {
 // Value returns FieldValue's value
 func (fv *FieldValueSubTemplateList) Value() interface{} {
 	return fv.value
+}
+
+// Set sets the FieldValue's value. Will return an error if the type is incorrect.
+func (fv *FieldValueSubTemplateList) Set(val interface{}) error {
+	switch val.(type) {
+	case FieldValueSubTemplateList:
+		fv.value = val.(SubTemplateList)
+	default:
+		return fmt.Errorf("Invalid type for %s", reflect.TypeOf(fv))
+	}
+	return nil
 }
 
 /* */
@@ -1188,4 +1222,15 @@ func (fv *FieldValueSubTemplateMultiList) Len() uint16 {
 // Value returns FieldValue's value
 func (fv *FieldValueSubTemplateMultiList) Value() interface{} {
 	return fv.value
+}
+
+// Set sets the FieldValue's value. Will return an error if the type is incorrect.
+func (fv *FieldValueSubTemplateMultiList) Set(val interface{}) error {
+	switch val.(type) {
+	case FieldValueSubTemplateMultiList:
+		fv.value = val.(SubTemplateMultiList)
+	default:
+		return fmt.Errorf("Invalid type for %s", reflect.TypeOf(fv))
+	}
+	return nil
 }

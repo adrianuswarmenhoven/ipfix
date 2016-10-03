@@ -246,7 +246,7 @@ func TestMarshalEncoding(t *testing.T) {
 		33: {SourceVal: &FieldValueBasicList{value: basicListA}, CompEncoded: []byte{3, 0, 12, 0, 4, 127, 0, 0, 1, 8, 8, 8, 8}, VariableLength: false},
 		34: {SourceVal: &FieldValueBasicList{value: basicListB}, CompEncoded: []byte{3, 128, 11, 0, 4, 0, 0, 175, 113, 127, 0, 0, 1, 8, 8, 8, 8}, VariableLength: false},
 		35: {SourceVal: &FieldValueBasicList{value: basicListC},
-			CompEncoded: append([]byte{0, 128, 21, 255, 255, 0, 0, 175, 113, 255, 0, 12, 47, 102, 97, 118, 105, 99, 111, 110, 46, 105, 99, 111, 255, 0, 15, 47, 115, 116, 121, 108, 101, 115, 104, 101, 101, 116, 46, 99, 115, 115, 255, 1, 44}, largeOctetArray(300)...), VariableLength: false},
+			CompEncoded: append([]byte{0, 128, 21, 255, 255, 0, 0, 175, 113, 12, 47, 102, 97, 118, 105, 99, 111, 110, 46, 105, 99, 111, 15, 47, 115, 116, 121, 108, 101, 115, 104, 101, 101, 116, 46, 99, 115, 115, 255, 1, 44}, largeOctetArray(300)...), VariableLength: false},
 	}
 
 	for _, testcase := range testset {
@@ -367,7 +367,7 @@ func TestFieldValueMarshalUnmarshalComplex(t *testing.T) {
 
 		0: {SourceVal: &FieldValueBasicList{value: basicListA}, DestVal: &FieldValueBasicList{}, CompVal: []byte{3, 0, 12, 0, 4, 127, 0, 0, 1, 8, 8, 8, 8}},
 		1: {SourceVal: &FieldValueBasicList{value: basicListB}, DestVal: &FieldValueBasicList{}, CompVal: []byte{3, 128, 11, 0, 4, 0, 0, 175, 113, 127, 0, 0, 1, 8, 8, 8, 8}},
-		2: {SourceVal: &FieldValueBasicList{value: basicListC}, DestVal: &FieldValueBasicList{}, CompVal: append([]byte{0, 128, 21, 255, 255, 0, 0, 175, 113, 255, 0, 12, 47, 102, 97, 118, 105, 99, 111, 110, 46, 105, 99, 111, 255, 0, 15, 47, 115, 116, 121, 108, 101, 115, 104, 101, 101, 116, 46, 99, 115, 115, 255, 1, 44}, largeOctetArray(300)...)},
+		2: {SourceVal: &FieldValueBasicList{value: basicListC}, DestVal: &FieldValueBasicList{}, CompVal: append([]byte{0, 128, 21, 255, 255, 0, 0, 175, 113, 12, 47, 102, 97, 118, 105, 99, 111, 110, 46, 105, 99, 111, 15, 47, 115, 116, 121, 108, 101, 115, 104, 101, 101, 116, 46, 99, 115, 115, 255, 1, 44}, largeOctetArray(300)...)},
 	}
 	for _, testcase := range testset {
 		binarydata, err := testcase.SourceVal.MarshalBinary()
@@ -375,7 +375,6 @@ func TestFieldValueMarshalUnmarshalComplex(t *testing.T) {
 			t.Errorf("Error marshalling %#v: %#v", testcase.SourceVal, err)
 		}
 		if len(binarydata) != int(testcase.SourceVal.Len()) {
-			fmt.Println(binarydata[:100])
 			t.Errorf("Error marshalling %#v: length of binary data should be %d, but was %d", testcase.SourceVal, testcase.SourceVal.Len(), len(binarydata))
 		}
 		err = testcase.DestVal.UnmarshalBinary(binarydata)

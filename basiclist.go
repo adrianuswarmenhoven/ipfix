@@ -42,8 +42,18 @@ func (blst *BasicList) Len() uint16 {
 	}
 	for _, listitem := range blst.FieldValues {
 		bllen += listitem.Len()
-		if blst.FieldLength == VariableLength { //If we have variable length, each item adds 3 octets in length encoding
-			bllen += 3
+		if blst.FieldLength == VariableLength {
+			switch listitem.(type) {
+			//RFC6313 Section 4.5.1 RECOMMENDED
+			case *FieldValueBasicList, *FieldValueSubTemplateList, *FieldValueSubTemplateMultiList:
+				bllen += 3
+			default:
+				if listitem.Len() < 255 {
+					bllen++
+				} else {
+					bllen += 3
+				}
+			}
 		}
 	}
 	return bllen
