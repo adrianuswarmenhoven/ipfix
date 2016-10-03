@@ -1,6 +1,9 @@
 package ipfixmessage
 
-import "fmt"
+import (
+	"encoding/binary"
+	"fmt"
+)
 
 /*
 The Information Elements are identified by the Information Element identifier.
@@ -30,7 +33,7 @@ func NewFieldSpecifier(enterpriseid uint32, informationelementid, fieldlength ui
 }
 
 // String returns the string representation of the Field Specifier
-func (fsp FieldSpecifier) String() string {
+func (fsp *FieldSpecifier) String() string {
 	retstr := ""
 	if fsp.E {
 		retstr = fmt.Sprintf("enterprise bit=yes, enterprise number=%d, information element identifier=%d, field length=%d, ", fsp.EnterpriseNumber, fsp.InformationElementIdentifier, fsp.FieldLength)
@@ -44,7 +47,7 @@ func (fsp FieldSpecifier) String() string {
 }
 
 // Len returns the length of the field specifier, in octets.
-func (fsp FieldSpecifier) Len() uint16 {
+func (fsp *FieldSpecifier) Len() uint16 {
 	if fsp.E {
 		return 8 //If the Enterprise Bit is set, we have to add the Enterprise Number
 	}
@@ -52,17 +55,50 @@ func (fsp FieldSpecifier) Len() uint16 {
 }
 
 // MarshalBinary satisfies the encoding/BinaryMarshaler interface
-// BUG(aw): NOT IMPLEMENTED
-func (fsp FieldSpecifier) MarshalBinary() (data []byte, err error) {
-	return nil, fmt.Errorf("Not yet implemented!")
+func (fsp *FieldSpecifier) MarshalBinary() (data []byte, err error) {
+	marshalValue := make([]byte, 0, 0)
+	marshalFieldID, err := marshalBinarySingleValue(fsp.InformationElementIdentifier)
+	if err != nil {
+		return nil, err
+	}
+	if fsp.E {
+		marshalFieldID[0] = marshalFieldID[0] | 128 //Setting the EnterpriseID bit
+	}
+	marshalValue = append(marshalValue, marshalFieldID...)
+	marshalFieldLength, err := marshalBinarySingleValue(fsp.FieldLength)
+	if err != nil {
+		return nil, err
+	}
+	marshalValue = append(marshalValue, marshalFieldLength...)
+
+	if fsp.E {
+		marshalEnterpriseID, err := marshalBinarySingleValue(fsp.EnterpriseNumber)
+		if err != nil {
+			return nil, err
+		}
+		marshalValue = append(marshalValue, marshalEnterpriseID...)
+	}
+
+	return marshalValue, nil
 }
 
 // UnmarshalBinary satisfies the encoding/BinaryUnmarshaler interface
-// BUG(aw): NOT IMPLEMENTED
-func (fsp FieldSpecifier) UnmarshalBinary(data []byte) error {
+func (fsp *FieldSpecifier) UnmarshalBinary(data []byte) error {
 	if data == nil || len(data) == 0 {
 		return fmt.Errorf("Can not unmarshal, invalid data. %#v", data)
 	}
-
-	return fmt.Errorf("Not yet implemented!")
+	if (data[0] & 128) != 0 {
+		fsp.E = true
+		data[0] = data[0] & 127 //Remove the bit
+	} else {
+		fsp.E = false
+		fsp.EnterpriseNumber = 0
+	}
+	fsp.InformationElementIdentifier = binary.BigEndian.Uint16(data[0:2])
+	if fsp.E {
+		data[0] = data[0] | 128 //Restore the bit (so we keep the original datablob)
+		fsp.EnterpriseNumber = binary.BigEndian.Uint32(data[4:])
+	}
+	fsp.FieldLength = binary.BigEndian.Uint16(data[2:4])
+	return nil
 }
