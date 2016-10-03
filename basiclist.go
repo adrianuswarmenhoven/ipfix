@@ -42,6 +42,9 @@ func (blst *BasicList) Len() uint16 {
 	}
 	for _, listitem := range blst.FieldValues {
 		bllen += listitem.Len()
+		if blst.FieldLength == VariableLength { //If we have variable length, each item adds 3 octets in length encoding
+			bllen += 3
+		}
 	}
 	return bllen
 }

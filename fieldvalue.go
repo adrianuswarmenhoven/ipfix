@@ -1048,7 +1048,7 @@ func (fv *FieldValueBasicList) MarshalBinary() ([]byte, error) {
 				}
 
 			default:
-				marshalLength, err = EncodeVariableLength(itemdata, false)
+				marshalLength, err = EncodeVariableLength(itemdata, true)
 				if err != nil {
 					return nil, err
 				}
@@ -1082,10 +1082,24 @@ func (fv *FieldValueBasicList) UnmarshalBinary(data []byte) error {
 		fv.value.EnterpriseNumber = binary.BigEndian.Uint32(data[cursor : cursor+4])
 		cursor += 4
 	}
-
-	for cursor+int(fv.value.FieldLength) <= len(data) {
+	for fv.value.FieldLength != VariableLength && cursor+int(fv.value.FieldLength) <= len(data) ||
+		(fv.value.FieldLength == VariableLength && cursor < len(data)) {
 		if fv.value.FieldLength == VariableLength {
-FIXME!
+			fieldlength, cursorshift, err := DecodeVariableLength(data[cursor : cursor+3]) //Max. 3 positions cursor shift
+			if err != nil {
+				return err
+			}
+			cursor += int(cursorshift)
+			newval, err := NewFieldValueByID(int(fv.value.EnterpriseNumber), int(fv.value.InformationElementIdentifier))
+			if err != nil {
+				return err
+			}
+			err = newval.UnmarshalBinary(data[cursor : cursor+int(fieldlength)])
+			if err != nil {
+				return err
+			}
+			cursor += int(fieldlength)
+			fv.value.FieldValues = append(fv.value.FieldValues, newval)
 		} else {
 			newval, err := NewFieldValueByID(int(fv.value.EnterpriseNumber), int(fv.value.InformationElementIdentifier))
 			if err != nil {
