@@ -36,9 +36,9 @@ func (datrec *DataRecord) String() string {
 // FieldValues have a type when added so there is implicit information on each field value to marshal it
 func (datrec *DataRecord) MarshalBinary() (data []byte, err error) {
 	if len(datrec.FieldValues) < 1 {
-		return nil, fmt.Errorf("Can not marshal record, must have at least one Field Specifier")
+		return nil, fmt.Errorf("Can not marshal record, must have at least one Field Value")
 	}
-	marshalValue := make([]byte, 0, 0)
+	marshalValue := []byte{}
 	for _, listitem := range datrec.FieldValues {
 		item, err := listitem.MarshalBinary()
 		if err != nil {
