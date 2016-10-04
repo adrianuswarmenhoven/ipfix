@@ -1,5 +1,9 @@
 package ipfixmessage
 
+const (
+	testMarkerString = "**************************************************\n* %s\n**************************************************\n"
+)
+
 //An enumeration of the types, mainly for testing purposes
 const (
 	t_unknown = iota

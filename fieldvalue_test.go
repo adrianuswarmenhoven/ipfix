@@ -10,6 +10,10 @@ import (
 	"time"
 )
 
+func TestFieldValueMarker(t *testing.T) {
+	fmt.Printf(testMarkerString, "FieldValue")
+}
+
 func TestFieldValueValueGoTypes(t *testing.T) {
 	testsetmatch := map[interface{}]int{
 		FieldValueUnsigned8{}.value:  tg_uint8,

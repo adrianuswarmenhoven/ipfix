@@ -90,5 +90,5 @@ func (datrec *DataRecord) UnmarshalBinary(template *TemplateRecord, data []byte)
 			cursor += int(fieldlen)
 		}
 	}
-	return fmt.Errorf("Not yet implemented!")
+	return nil
 }
