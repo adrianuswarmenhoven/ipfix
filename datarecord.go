@@ -26,6 +26,15 @@ func (datrec *DataRecord) Len() uint16 {
 	return reclen
 }
 
+// AssociateTemplate sets the template to be used marshalling/unmarshalling this DataRecord
+func (datrec *DataRecord) AssociateTemplate(tr *TemplateRecord) error {
+	if tr == nil {
+		return fmt.Errorf("Can not use nil as Template")
+	}
+	datrec.AssociatedTemplate = tr
+	return nil
+}
+
 // String returns the string representation of the Template Record
 func (datrec *DataRecord) String() string {
 	stringresult := ""
@@ -45,10 +54,31 @@ func (datrec *DataRecord) MarshalBinary() (data []byte, err error) {
 		return nil, fmt.Errorf("Can not marshal record, must have at least one Field Value")
 	}
 	marshalValue := []byte{}
-	for _, listitem := range datrec.FieldValues {
+	for fieldidx, listitem := range datrec.FieldValues {
 		item, err := listitem.MarshalBinary()
 		if err != nil {
 			return nil, err
+		}
+		if datrec.AssociatedTemplate.FieldSpecifiers[fieldidx].FieldLength != VariableLength {
+			if len(item) != int(datrec.AssociatedTemplate.FieldSpecifiers[fieldidx].FieldLength) {
+				return nil, fmt.Errorf("Wrong marshalled size for item %#v, expected %d, but got %d", listitem, len(item), datrec.AssociatedTemplate.FieldSpecifiers[fieldidx].FieldLength)
+			}
+		} else {
+			var marshalLength []byte
+			switch listitem.(type) {
+			case *FieldValueBasicList, *FieldValueSubTemplateList, *FieldValueSubTemplateMultiList:
+				marshalLength, err = EncodeVariableLength(item, true)
+				if err != nil {
+					return nil, err
+				}
+
+			default:
+				marshalLength, err = EncodeVariableLength(item, false)
+				if err != nil {
+					return nil, err
+				}
+			}
+			marshalValue = append(marshalValue, marshalLength...)
 		}
 		marshalValue = append(marshalValue, item...)
 	}
@@ -56,7 +86,7 @@ func (datrec *DataRecord) MarshalBinary() (data []byte, err error) {
 }
 
 // UnmarshalBinary satisfies the encoding/BinaryUnmarshaler interface
-func (datrec *DataRecord) UnmarshalBinary(template *TemplateRecord, data []byte) error {
+func (datrec *DataRecord) UnmarshalBinary(data []byte) error {
 	if datrec.AssociatedTemplate == nil {
 		return fmt.Errorf("Can not unmarshal without a template")
 	}
@@ -64,7 +94,7 @@ func (datrec *DataRecord) UnmarshalBinary(template *TemplateRecord, data []byte)
 		return fmt.Errorf("Can not unmarshal, invalid data. %#v", data)
 	}
 	cursor := 0
-	for _, recitem := range template.FieldSpecifiers {
+	for _, recitem := range datrec.AssociatedTemplate.FieldSpecifiers {
 		newval, err := NewFieldValueByID(int(recitem.EnterpriseNumber), int(recitem.InformationElementIdentifier))
 		if err != nil {
 			return err

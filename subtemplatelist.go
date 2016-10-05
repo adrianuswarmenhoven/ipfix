@@ -7,9 +7,10 @@ import "fmt"
 // SubTemplateList represents a list of zero or more instances of a structured data type, where the data type of each list element is the same and corresponds with a single Template Record.
 // Examples include a structured data type composed of multiple pairs of ("MPLS label stack entry position", "MPLS label stack value"), a structured data type composed of performance metrics, and a structured data type composed of multiple pairs of IP address, etc.
 type SubTemplateList struct {
-	Semantic   uint8    //one of: SemanticsNoneOf, ExactlyOneOf, OneOrMoreOf, AllOf, Ordered or Undefined
-	TemplateID uint16   //Each of the newly generated Template Records is given a unique Template ID.  This uniqueness is local to the Transport Session and Observation Domain that generated the Template ID. Template IDs 0-255 are reserved for Template Sets, Options Template Sets, and other reserved Sets yet to be created.  Template IDs of Data Sets are numbered from 256 to 65535.  There are no constraints regarding the order of the Template ID allocation.
-	Records    []Record //The list of Records
+	Semantic           uint8           //one of: SemanticsNoneOf, ExactlyOneOf, OneOrMoreOf, AllOf, Ordered or Undefined
+	TemplateID         uint16          //Each of the newly generated Template Records is given a unique Template ID.  This uniqueness is local to the Transport Session and Observation Domain that generated the Template ID. Template IDs 0-255 are reserved for Template Sets, Options Template Sets, and other reserved Sets yet to be created.  Template IDs of Data Sets are numbered from 256 to 65535.  There are no constraints regarding the order of the Template ID allocation.
+	AssociatedTemplate *TemplateRecord //We can only begin to marshal/unmarshal the records when we have the whole template belonging to the TemplateID
+	Records            []Record        //The list of Records
 }
 
 // NewSubTemplateList returns a new SubTemplateList.

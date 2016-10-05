@@ -559,7 +559,13 @@ func (fv *FieldValueMacAddress) UnmarshalBinary(data []byte) error {
 	if len(data) < 6 {
 		return fmt.Errorf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data))
 	}
-	return unmarshalBinaryOctets(data, &fv.value)
+	tmpval := make([]byte, len(data))
+	err := unmarshalBinaryOctets(data, tmpval)
+	if err != nil {
+		return err
+	}
+	fv.value = net.HardwareAddr(tmpval)
+	return nil
 }
 
 // Len returns the number of octets this FieldValue is wide
@@ -1041,7 +1047,7 @@ func (fv *FieldValueBasicList) MarshalBinary() ([]byte, error) {
 		if fv.value.FieldLength == VariableLength {
 			var marshalLength []byte
 			switch listitem.(type) {
-			case *FieldValueBasicList /*, *FieldValueSubTemplateList, *FieldValueSubTemplateMultiList*/ :
+			case *FieldValueBasicList, *FieldValueSubTemplateList, *FieldValueSubTemplateMultiList:
 				marshalLength, err = EncodeVariableLength(itemdata, true)
 				if err != nil {
 					return nil, err
@@ -1146,6 +1152,9 @@ type FieldValueSubTemplateList struct {
 
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
 func (fv *FieldValueSubTemplateList) MarshalBinary() ([]byte, error) {
+	if fv.value.AssociatedTemplate == nil {
+		return nil, fmt.Errorf("Can not marshal without template.")
+	}
 	marshalValue := make([]byte, 0, 0)
 	marshalValue = append(marshalValue, fv.value.Semantic)
 
@@ -1154,24 +1163,34 @@ func (fv *FieldValueSubTemplateList) MarshalBinary() ([]byte, error) {
 		return nil, err
 	}
 	marshalValue = append(marshalValue, marshalTemplateID...)
-	/*
-		//Fetching all the marshalled records
-		for _, listitem := range fv.value.Records {
-			recordBinary, err := listitem.MarshalBinary()
-			if err != nil {
-				return nil, err
-			}
-			marshalValue = append(marshalValue, recordBinary...)
-		}*/
+	for _, listitem := range fv.value.Records {
+		listitem.(*DataRecord).AssociateTemplate(fv.value.AssociatedTemplate)
+		recordBinary, err := listitem.(*DataRecord).MarshalBinary()
+		if err != nil {
+			return nil, err
+		}
+		marshalValue = append(marshalValue, recordBinary...)
+	}
 
 	return marshalValue, nil
 }
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
 func (fv *FieldValueSubTemplateList) UnmarshalBinary(data []byte) error {
+	if fv.value.AssociatedTemplate == nil {
+		return fmt.Errorf("Can not unmarshal without template.")
+	}
 	fv.value = SubTemplateList{}
 	fv.value.Records = make([]Record, 0, 0)
 
+	fv.value.Semantic = data[0]
+	fv.value.TemplateID = binary.BigEndian.Uint16(data[1:3])
+
+	return nil
+}
+
+// UnmarshalMeta fills the TemplateID so we can do a full unmarshal if we have the template
+func (fv *FieldValueSubTemplateList) UnmarshalMeta(data []byte) error {
 	fv.value.Semantic = data[0]
 	fv.value.TemplateID = binary.BigEndian.Uint16(data[1:3])
 	return nil
@@ -1195,6 +1214,15 @@ func (fv *FieldValueSubTemplateList) Set(val interface{}) error {
 	default:
 		return fmt.Errorf("Invalid type for %s", reflect.TypeOf(fv))
 	}
+	return nil
+}
+
+// AssociateTemplate sets the template implementation in this Field Value
+func (fv *FieldValueSubTemplateList) AssociateTemplate(tr *TemplateRecord) error {
+	if tr == nil {
+		return fmt.Errorf("Can not use nil as Template")
+	}
+	fv.value.AssociatedTemplate = tr
 	return nil
 }
 
