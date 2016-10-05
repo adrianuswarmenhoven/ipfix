@@ -11,6 +11,9 @@ import "fmt"
 // Field Values are encoded according to their data type as specified in [RFC7012].
 // Interpretation of the Data Record format can be done only if the Template Record corresponding to the Template ID is available at the Collecting Process.
 type DataRecord struct {
+	//AssociatedTemplate points to the template record. Without a template record a data record can not be encoded or decoded
+	AssociatedTemplate *TemplateRecord
+
 	FieldValues []FieldValue //Note that Field Values do not necessarily have a length of 16 bits. Field Values are encoded according to their data type specified in [RFC5102].
 }
 
@@ -35,6 +38,9 @@ func (datrec *DataRecord) String() string {
 // MarshalBinary satisfies the encoding/BinaryMarshaler interface
 // FieldValues have a type when added so there is implicit information on each field value to marshal it
 func (datrec *DataRecord) MarshalBinary() (data []byte, err error) {
+	if datrec.AssociatedTemplate == nil {
+		return nil, fmt.Errorf("Can not marshal without a template")
+	}
 	if len(datrec.FieldValues) < 1 {
 		return nil, fmt.Errorf("Can not marshal record, must have at least one Field Value")
 	}
@@ -51,6 +57,9 @@ func (datrec *DataRecord) MarshalBinary() (data []byte, err error) {
 
 // UnmarshalBinary satisfies the encoding/BinaryUnmarshaler interface
 func (datrec *DataRecord) UnmarshalBinary(template *TemplateRecord, data []byte) error {
+	if datrec.AssociatedTemplate == nil {
+		return fmt.Errorf("Can not unmarshal without a template")
+	}
 	if data == nil || len(data) == 0 {
 		return fmt.Errorf("Can not unmarshal, invalid data. %#v", data)
 	}

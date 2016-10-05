@@ -26,7 +26,8 @@ type fieldvalueelement struct {
 	DataType  string
 	ElementID int
 
-	GoFieldValue string //The Field Value as implemented in this package
+	GoFieldValue  string //The Field Value as implemented in this package
+	GoFieldLength string //The length of the Field
 }
 
 type templatevariables struct {
@@ -88,66 +89,91 @@ func main() {
 					strings.TrimSpace(el.DataType) != "" &&
 					el.ElementID != 0 {
 					GoRetval := "FieldValueOctetArray" //If we simply do not know, we can always pass it on as a bunch of bytes
+					GoFieldLen := "65535"
 					switch el.DataType {
 					case "unsigned8":
 						GoRetval = "FieldValueUnsigned8"
+						GoFieldLen = "1"
 					case "unsigned16":
 						GoRetval = "FieldValueUnsigned16"
+						GoFieldLen = "2"
 					case "unsigned32":
 						GoRetval = "FieldValueUnsigned32"
+						GoFieldLen = "4"
 					case "unsigned64":
 						GoRetval = "FieldValueUnsigned64"
+						GoFieldLen = "8"
 
 					case "signed8":
 						GoRetval = "FieldValueSigned8"
+						GoFieldLen = "1"
 					case "signed16":
 						GoRetval = "FieldValueSigned16"
+						GoFieldLen = "2"
 					case "signed32":
 						GoRetval = "FieldValueSigned32"
+						GoFieldLen = "4"
 					case "signed64":
 						GoRetval = "FieldValueSigned64"
+						GoFieldLen = "8"
 
 					case "float32":
 						GoRetval = "FieldValueFloat32"
+						GoFieldLen = "4"
 					case "float64":
 						GoRetval = "FieldValueFloat64"
+						GoFieldLen = "8"
 
 					case "boolean":
 						GoRetval = "FieldValueBoolean"
+						GoFieldLen = "1"
 
 					case "macAddress":
 						GoRetval = "FieldValueMacAddress"
+						GoFieldLen = "6"
 
 					case "octetArray":
 						GoRetval = "FieldValueOctetArray"
+						GoFieldLen = "65535"
 
 					case "string":
 						GoRetval = "FieldValueString"
+						GoFieldLen = "65535"
 
 					case "dateTimeSeconds":
 						GoRetval = "FieldValueDateTimeSeconds"
+						GoFieldLen = "4"
 					case "dateTimeMilliseconds":
 						GoRetval = "FieldValueDateTimeMilliseconds"
+						GoFieldLen = "4"
 					case "dateTimeMicroseconds":
 						GoRetval = "FieldValueDateTimeMicroseconds"
+						GoFieldLen = "4"
 					case "dateTimeNanoseconds":
 						GoRetval = "FieldValueDateTimeNanoseconds"
+						GoFieldLen = "4"
 
 					case "ipv4Address":
 						GoRetval = "FieldValueIPv4Address"
+						GoFieldLen = "4"
 					case "ipv6Address":
 						GoRetval = "FieldValueIPv6Address"
+						GoFieldLen = "16"
 
 					case "basicList":
 						GoRetval = "FieldValueBasicList"
-						//	case "subTemplateList":
-						//		source += fmt.Sprintf("case %d: return &FieldValueSubTemplateList{},nil // %s\n", el.ElementID, el.Name)
-						//	case "subTemplateMultiList":
-						//		source += fmt.Sprintf("case %d: return &FieldValueSubTemplateMultiList{},nil // %s\n", el.ElementID, el.Name)
+						GoFieldLen = "65535"
 
+					case "subTemplateList":
+						GoRetval = "FieldValueSubTemplateList"
+						GoFieldLen = "65535"
+					case "subTemplateMultiList":
+						GoRetval = "FieldValueSubTemplateMultiList"
+						GoFieldLen = "65535"
 					}
 					tmpelement := templatedata.Elements[entid][elid]
 					tmpelement.GoFieldValue = GoRetval
+					tmpelement.GoFieldLength = GoFieldLen
 					templatedata.Elements[entid][elid] = tmpelement
 				}
 			}
@@ -243,8 +269,8 @@ func FetchIANA() {
 func FetchIPFIXColStyle() {
 	var (
 		IPFIXColStyleXML = []string{
-			0:"https://raw.githubusercontent.com/SecDorks/ipfixcol/master/base/config/ipfix-elements.xml",
-			1:"https://raw.githubusercontent.com/CESNET/ipfixcol/master/base/config/ipfix-elements.xml",
+			0: "https://raw.githubusercontent.com/SecDorks/ipfixcol/master/base/config/ipfix-elements.xml",
+			1: "https://raw.githubusercontent.com/CESNET/ipfixcol/master/base/config/ipfix-elements.xml",
 		}
 	)
 	type Element struct {
@@ -261,36 +287,36 @@ func FetchIPFIXColStyle() {
 
 		Element []Element `xml:"element"`
 	}
-for _,fetchurl:=range IPFIXColStyleXML{
-	elements := IPFixElementsList{}
-	sanitizestring := FetchURL(fetchurl)
-	sanitizestring = strings.Map(func(check rune) rune {
-		switch check {
-		case '\n', '\r':
-			return -1
-		}
-		return check
-	}, sanitizestring)
-	err := xml.Unmarshal([]byte(sanitizestring), &elements)
-	if err != nil {
-		fmt.Printf("Malformed XM: %#v\n", err)
-		fmt.Println(err)
-	} else {
-		for _, el := range elements.Element {
-			ElementID, err := strconv.ParseInt(el.ElementID, 10, 32)
-			if err == nil {
-				EnterpriseID, err := strconv.ParseInt(el.EnterpriseID, 10, 32)
-				if err == nil && strings.TrimSpace(el.Name) != "" &&
-					strings.TrimSpace(el.DataType) != "" &&
-					ElementID != 0 && EnterpriseID != 0 {
-					if _, exists := elementsmap[int(EnterpriseID)]; !exists {
-						elementsmap[int(EnterpriseID)] = make(map[int]fieldvalueelement)
-						sources[int(EnterpriseID)] = "IPFIXColStyle - "+fetchurl
+	for _, fetchurl := range IPFIXColStyleXML {
+		elements := IPFixElementsList{}
+		sanitizestring := FetchURL(fetchurl)
+		sanitizestring = strings.Map(func(check rune) rune {
+			switch check {
+			case '\n', '\r':
+				return -1
+			}
+			return check
+		}, sanitizestring)
+		err := xml.Unmarshal([]byte(sanitizestring), &elements)
+		if err != nil {
+			fmt.Printf("Malformed XM: %#v\n", err)
+			fmt.Println(err)
+		} else {
+			for _, el := range elements.Element {
+				ElementID, err := strconv.ParseInt(el.ElementID, 10, 32)
+				if err == nil {
+					EnterpriseID, err := strconv.ParseInt(el.EnterpriseID, 10, 32)
+					if err == nil && strings.TrimSpace(el.Name) != "" &&
+						strings.TrimSpace(el.DataType) != "" &&
+						ElementID != 0 && EnterpriseID != 0 {
+						if _, exists := elementsmap[int(EnterpriseID)]; !exists {
+							elementsmap[int(EnterpriseID)] = make(map[int]fieldvalueelement)
+							sources[int(EnterpriseID)] = "IPFIXColStyle - " + fetchurl
+						}
+						elementsmap[int(EnterpriseID)][int(ElementID)] = fieldvalueelement{Name: el.Name, DataType: el.DataType, ElementID: int(ElementID)}
 					}
-					elementsmap[int(EnterpriseID)][int(ElementID)] = fieldvalueelement{Name: el.Name, DataType: el.DataType, ElementID: int(ElementID)}
 				}
 			}
 		}
 	}
-}
 }
