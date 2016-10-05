@@ -47,13 +47,13 @@ func TestSetWithTemplateRecord(t *testing.T) {
 	if err != nil {
 		t.Fatalf("New Field Specifier creation failed: %#v", err)
 	}
-	newtemplrec.AddSpecifier(&newfsp)
+	newtemplrec.AddSpecifier(newfsp)
 
 	newfsp2, err := NewFieldSpecifier(12345, 101, 4)
 	if err != nil {
 		t.Fatalf("New Field Specifier creation failed: %#v", err)
 	}
-	newtemplrec.AddSpecifier(&newfsp2)
+	newtemplrec.AddSpecifier(newfsp2)
 
 	err = testset.AddRecord(newtemplrec)
 	if err != nil {

@@ -65,20 +65,35 @@ func NewOptionsTemplateRecord(templateid uint16) (*TemplateRecord, error) {
 	}, nil
 }
 
+// IsOptionsTemplateRecord returns true if the template record is an Options Template Record
+func (tmplrec *TemplateRecord) IsOptionsTemplateRecord() bool {
+	return tmplrec.ScopeFieldSpecifiers == nil
+}
+
 // String returns the string representation of the Template Record
 func (tmplrec *TemplateRecord) String() string {
-	retstring := ""
-	if tmplrec.ScopeFieldSpecifiers != nil {
-		retstring += fmt.Sprintf("type=template, ")
+	retstring := fmt.Sprintf("id=%d, ", tmplrec.TemplateID)
+	if tmplrec.ScopeFieldSpecifiers == nil {
+		retstring += fmt.Sprintf("type=template, field count=%d, ", len(tmplrec.FieldSpecifiers))
+
 	} else {
-		retstring += fmt.Sprintf("type=options template, scope field count=%d:\n", len(tmplrec.ScopeFieldSpecifiers))
-		for _, sfs := range tmplrec.ScopeFieldSpecifiers {
-			retstring += "\t" + sfs.String() + "\n"
+		retstring += fmt.Sprintf("type=options template, field count=%d, scope field count=%d", len(tmplrec.FieldSpecifiers), len(tmplrec.ScopeFieldSpecifiers))
+		for idx, sfs := range tmplrec.ScopeFieldSpecifiers {
+			if idx > 0 {
+				retstring += "; "
+			} else {
+				retstring += ": "
+			}
+			retstring += sfs.String()
 		}
 	}
-	retstring += fmt.Sprintf("field count=%d:\n", len(tmplrec.FieldSpecifiers))
-	for _, fs := range tmplrec.FieldSpecifiers {
-		retstring += "\t" + fs.String() + "\n"
+	for idx, fs := range tmplrec.FieldSpecifiers {
+		if idx > 0 {
+			retstring += "; "
+		} else {
+			retstring += ": "
+		}
+		retstring += fs.String()
 	}
 	return retstring
 }
@@ -178,10 +193,12 @@ func (tmplrec *TemplateRecord) UnmarshalBinary(data []byte) error {
 	tmplrec.TemplateID = binary.BigEndian.Uint16(data[0:2])
 	totalFieldCount := binary.BigEndian.Uint16(data[2:4])
 	scopeFieldCount := uint16(0)
+	cursor := uint16(4)
 	if tmplrec.ScopeFieldSpecifiers != nil {
 		scopeFieldCount = binary.BigEndian.Uint16(data[4:6])
+		cursor = 6
 	}
-	cursor := uint16(6)
+
 	for cnt := uint16(0); cnt < scopeFieldCount; cnt++ {
 		scopeField := &FieldSpecifier{}
 		if (data[cursor] & 128) != 0 {

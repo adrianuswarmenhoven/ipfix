@@ -20,11 +20,11 @@ type FieldSpecifier struct {
 }
 
 // NewFieldSpecifier returns a Field Specifier. If the Enterprise ID is 0 then the Enterprise Bit will not be set.
-func NewFieldSpecifier(enterpriseid uint32, informationelementid, fieldlength uint16) (FieldSpecifier, error) {
+func NewFieldSpecifier(enterpriseid uint32, informationelementid, fieldlength uint16) (*FieldSpecifier, error) {
 	if informationelementid >= 32768 {
-		return FieldSpecifier{}, fmt.Errorf("Information Element ID can not be greater than 32767, but got %d", informationelementid)
+		return &FieldSpecifier{}, fmt.Errorf("Information Element ID can not be greater than 32767, but got %d", informationelementid)
 	}
-	return FieldSpecifier{
+	return &FieldSpecifier{
 		E: (enterpriseid != 0),
 		InformationElementIdentifier: informationelementid,
 		FieldLength:                  fieldlength,
