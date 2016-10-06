@@ -364,7 +364,7 @@ func TestFieldValueMarshalUnmarshal(t *testing.T) {
 		}
 	}
 }
-func TestFieldValueMarshalUnmarshalComplex(t *testing.T) {
+func TestFieldValueMarshalUnmarshalBasicList(t *testing.T) {
 	dateC.Add(12345 * time.Nanosecond)
 
 	var testset = []fieldvalueMarshalUnmarshalTestcase{
@@ -393,6 +393,12 @@ func TestFieldValueMarshalUnmarshalComplex(t *testing.T) {
 			t.Errorf("Error in value after conversions, wanted %#v (%#v), but got %#v", testcase.SourceVal, testcase.CompVal, testcase.DestVal)
 			fmt.Println(binarydata, compbinarydata)
 		}
+	}
+}
+
+func TestFieldValueMarshalUnmarshalSubTemplateList(t *testing.T) {
+	if t == nil {
+		t.Errorf("a")
 	}
 }
 

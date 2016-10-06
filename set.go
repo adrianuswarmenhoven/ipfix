@@ -83,6 +83,7 @@ func (ipfixset *Set) Pad(paddingboundary uint16) {
 // MarshalBinary satisfies the encoding/BinaryMarshaler interface
 // BUG(aw): NOT IMPLEMENTED
 func (ipfixset *Set) MarshalBinary() (data []byte, err error) {
+	//If template or optionstemplate do not use associate
 	return nil, fmt.Errorf("Not yet implemented!")
 }
 
