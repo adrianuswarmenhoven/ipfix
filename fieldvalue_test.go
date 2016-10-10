@@ -106,6 +106,107 @@ var (
 			2: &FieldValueString{value: string(largeOctetArray(300))}, //Needed to test length encoding
 		},
 	}
+
+	testSubTemplateListTemplates = map[uint16]*ActiveTemplate{
+		257: &ActiveTemplate{
+			Added:     time.Now(),
+			NofAccess: 0,
+			Record: &TemplateRecord{
+				TemplateID: 257,
+				FieldSpecifiers: []*FieldSpecifier{
+					0: &FieldSpecifier{
+						E: false,
+						InformationElementIdentifier: 12,
+						EnterpriseNumber:             0,
+						FieldLength:                  4,
+					},
+					1: &FieldSpecifier{
+						E: true,
+						InformationElementIdentifier: 11,
+						EnterpriseNumber:             44913,
+						FieldLength:                  4,
+					},
+				},
+			},
+		},
+		258: &ActiveTemplate{
+			Added:     time.Now(),
+			NofAccess: 0,
+			Record: &TemplateRecord{
+				TemplateID: 258,
+				FieldSpecifiers: []*FieldSpecifier{
+					0: &FieldSpecifier{
+						E: false,
+						InformationElementIdentifier: 20,
+						EnterpriseNumber:             44913,
+						FieldLength:                  VariableLength,
+					},
+					1: &FieldSpecifier{
+						E: true,
+						InformationElementIdentifier: 21,
+						EnterpriseNumber:             44913,
+						FieldLength:                  VariableLength,
+					},
+				},
+			},
+		},
+
+		***MARKER***
+	}
+
+	subTemplateListA = SubTemplateList{
+		Semantic:            OneOrMoreOf,
+		TemplateID:          257,
+		AssociatedTemplates: &ActiveTemplates{Template: testSubTemplateListTemplates},
+		Records: []Record{
+			0: &DataRecord{
+				FieldValues: []FieldValue{
+					0: &FieldValueIPv4Address{value: net.ParseIP("127.0.0.1")},
+					1: &FieldValueIPv4Address{value: net.ParseIP("8.8.8.8")},
+				},
+			},
+		},
+	}
+
+	subTemplateListB = SubTemplateList{
+		Semantic:            OneOrMoreOf,
+		TemplateID:          257,
+		AssociatedTemplates: &ActiveTemplates{Template: testSubTemplateListTemplates},
+		Records: []Record{
+			0: &DataRecord{
+				FieldValues: []FieldValue{
+					0: &FieldValueIPv4Address{value: net.ParseIP("127.0.0.1")},
+					1: &FieldValueIPv4Address{value: net.ParseIP("8.8.8.8")},
+				},
+			},
+			1: &DataRecord{
+				FieldValues: []FieldValue{
+					0: &FieldValueIPv4Address{value: net.ParseIP("4.4.4.4")},
+					1: &FieldValueIPv4Address{value: net.ParseIP("192.168.172.16")},
+				},
+			},
+		},
+	}
+
+	subTemplateListB = SubTemplateList{
+		Semantic:            AllOf,
+		TemplateID:          258,
+		AssociatedTemplates: &ActiveTemplates{Template: testSubTemplateListTemplates},
+		Records: []Record{
+			0: &DataRecord{
+				FieldValues: []FieldValue{
+					0: &FieldValueIPv4Address{value: net.ParseIP("127.0.0.1")},
+					1: &FieldValueIPv4Address{value: net.ParseIP("8.8.8.8")},
+				},
+			},
+			1: &DataRecord{
+				FieldValues: []FieldValue{
+					0: &FieldValueIPv4Address{value: net.ParseIP("4.4.4.4")},
+					1: &FieldValueIPv4Address{value: net.ParseIP("192.168.172.16")},
+				},
+			},
+		},
+	}
 )
 
 type fieldvalueSetGetTestcase struct {
@@ -391,14 +492,47 @@ func TestFieldValueMarshalUnmarshalBasicList(t *testing.T) {
 		}
 		if !reflect.DeepEqual(binarydata, compbinarydata) {
 			t.Errorf("Error in value after conversions, wanted %#v (%#v), but got %#v", testcase.SourceVal, testcase.CompVal, testcase.DestVal)
-			fmt.Println(binarydata, compbinarydata)
+		}
+		if !reflect.DeepEqual(binarydata, testcase.CompVal) {
+			t.Errorf("Error in value after conversions, wanted %#v (%#v), but got %#v", testcase.SourceVal, testcase.CompVal, testcase.DestVal)
 		}
 	}
 }
 
 func TestFieldValueMarshalUnmarshalSubTemplateList(t *testing.T) {
-	if t == nil {
-		t.Errorf("a")
+	var testset = []fieldvalueMarshalUnmarshalTestcase{
+		0: {SourceVal: &FieldValueSubTemplateList{value: subTemplateListA}, DestVal: &FieldValueSubTemplateList{value: SubTemplateList{TemplateID: 257, AssociatedTemplates: &ActiveTemplates{Template: testSubTemplateListTemplates}}}, CompVal: []byte{2, 1, 1, 127, 0, 0, 1, 8, 8, 8, 8}},
+		1: {SourceVal: &FieldValueSubTemplateList{value: subTemplateListB}, DestVal: &FieldValueSubTemplateList{value: SubTemplateList{TemplateID: 257, AssociatedTemplates: &ActiveTemplates{Template: testSubTemplateListTemplates}}}, CompVal: []byte{2, 1, 1, 127, 0, 0, 1, 8, 8, 8, 8, 4, 4, 4, 4, 192, 168, 172, 16}},
+	}
+	for _, testcase := range testset {
+		binarydata, err := testcase.SourceVal.MarshalBinary()
+		if err != nil {
+			t.Errorf("Error marshalling %#v: %#v", testcase.SourceVal, err)
+		}
+		if len(binarydata) != int(testcase.SourceVal.Len()) {
+			t.Errorf("Error marshalling %#v: length of binary data should be %d, but was %d", testcase.SourceVal, testcase.SourceVal.Len(), len(binarydata))
+		}
+		err = testcase.DestVal.UnmarshalBinary(binarydata)
+		fmt.Println(fmt.Sprintf("%#v", testcase.DestVal))
+		for _, rec := range testcase.DestVal.Value().(SubTemplateList).Records {
+			for _, fv := range rec.(*DataRecord).FieldValues {
+				fmt.Println(fv.Value())
+			}
+		}
+		if err != nil {
+			t.Errorf("Error unmarshalling %#v: %#v", testcase.SourceVal, err)
+		}
+		compbinarydata, err := testcase.DestVal.MarshalBinary()
+		fmt.Println(compbinarydata)
+		if err != nil {
+			t.Errorf("Error marshalling %#v: %#v", testcase.DestVal, err)
+		}
+		if !reflect.DeepEqual(binarydata, compbinarydata) {
+			t.Errorf("Error in value after conversions, wanted %#v (%#v), but got %#v", testcase.SourceVal, testcase.CompVal, testcase.DestVal)
+		}
+		if !reflect.DeepEqual(binarydata, testcase.CompVal) {
+			t.Errorf("Error in value after conversions, wanted %#v (%#v), but got %#v", testcase.SourceVal, testcase.CompVal, testcase.DestVal)
+		}
 	}
 }
 

@@ -1150,10 +1150,22 @@ type FieldValueSubTemplateList struct {
 	value SubTemplateList
 }
 
+// SetAssiocatedTemplates sets the list of templates belonging to this session
+func (fv *FieldValueSubTemplateList) SetAssiocatedTemplates(at *ActiveTemplates) error {
+	if at == nil {
+		return fmt.Errorf("Can not set associated templates to nil")
+	}
+	fv.value.AssociatedTemplates = at
+	return nil
+}
+
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
 func (fv *FieldValueSubTemplateList) MarshalBinary() ([]byte, error) {
-	if fv.value.AssociatedTemplate == nil {
-		return nil, fmt.Errorf("Can not marshal without template.")
+	if fv.value.AssociatedTemplates == nil {
+		return nil, fmt.Errorf("Can not marshal without associated templates")
+	}
+	if fv.value.TemplateID < 256 {
+		return nil, fmt.Errorf("Can not marshal without a template id")
 	}
 	marshalValue := make([]byte, 0, 0)
 	marshalValue = append(marshalValue, fv.value.Semantic)
@@ -1164,7 +1176,8 @@ func (fv *FieldValueSubTemplateList) MarshalBinary() ([]byte, error) {
 	}
 	marshalValue = append(marshalValue, marshalTemplateID...)
 	for _, listitem := range fv.value.Records {
-		listitem.(*DataRecord).AssociateTemplate(fv.value.AssociatedTemplate)
+		listitem.(*DataRecord).AssociateTemplates(fv.value.AssociatedTemplates)
+		listitem.(*DataRecord).SetTemplateID(fv.value.TemplateID)
 		recordBinary, err := listitem.(*DataRecord).MarshalBinary()
 		if err != nil {
 			return nil, err
@@ -1177,22 +1190,47 @@ func (fv *FieldValueSubTemplateList) MarshalBinary() ([]byte, error) {
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
 func (fv *FieldValueSubTemplateList) UnmarshalBinary(data []byte) error {
-	if fv.value.AssociatedTemplate == nil {
-		return fmt.Errorf("Can not unmarshal without template.")
+	if fv.value.AssociatedTemplates == nil {
+		return fmt.Errorf("Can not marshal without associated templates")
 	}
-	fv.value = SubTemplateList{}
+	if data == nil || len(data) == 0 {
+		return fmt.Errorf("Can not unmarshal, invalid data. %#v", data)
+	}
+
+	fv.value = SubTemplateList{AssociatedTemplates: fv.value.AssociatedTemplates, TemplateID: fv.value.TemplateID} //Create a clean copy with correct data, may not be necessary
 	fv.value.Records = make([]Record, 0, 0)
 
 	fv.value.Semantic = data[0]
 	fv.value.TemplateID = binary.BigEndian.Uint16(data[1:3])
+	if fv.value.TemplateID < 256 {
+		return fmt.Errorf("Can not marshal without a template id")
+	}
 
-	return nil
-}
-
-// UnmarshalMeta fills the TemplateID so we can do a full unmarshal if we have the template
-func (fv *FieldValueSubTemplateList) UnmarshalMeta(data []byte) error {
-	fv.value.Semantic = data[0]
-	fv.value.TemplateID = binary.BigEndian.Uint16(data[1:3])
+	curtemplate, err := fv.value.AssociatedTemplates.Get(fv.value.TemplateID)
+	if err != nil {
+		return fmt.Errorf("Can not marshal record, error in retrieving template %#v", err)
+	}
+	reclen := uint16(0)
+	for _, rec := range curtemplate.ScopeFieldSpecifiers {
+		reclen += uint16(rec.FieldLength)
+	}
+	for _, rec := range curtemplate.FieldSpecifiers {
+		reclen += uint16(rec.FieldLength)
+	}
+	cursor := uint16(3)
+	for cursor < uint16(len(data)) {
+		newdatrec := &DataRecord{
+			AssociatedTemplates: fv.value.AssociatedTemplates,
+			TemplateID:          fv.value.TemplateID,
+			FieldValues:         make([]FieldValue, 0, 0),
+		}
+		err = newdatrec.UnmarshalBinary(data[cursor:])
+		if err != nil {
+			return err
+		}
+		fv.value.Records = append(fv.value.Records, newdatrec)
+		cursor += newdatrec.Len()
+	}
 	return nil
 }
 
@@ -1217,19 +1255,19 @@ func (fv *FieldValueSubTemplateList) Set(val interface{}) error {
 	return nil
 }
 
-// AssociateTemplate sets the template implementation in this Field Value
-func (fv *FieldValueSubTemplateList) AssociateTemplate(tr *TemplateRecord) error {
-	if tr == nil {
-		return fmt.Errorf("Can not use nil as Template")
-	}
-	fv.value.AssociatedTemplate = tr
-	return nil
-}
-
 /* */
 // FieldValueSubTemplateMultiList , "subTemplateMultiList" supports structured data export as described in [RFC6313];
 type FieldValueSubTemplateMultiList struct {
 	value SubTemplateMultiList
+}
+
+// SetAssiocatedTemplates sets the list of templates belonging to this session
+func (fv *FieldValueSubTemplateMultiList) SetAssiocatedTemplates(at *ActiveTemplates) error {
+	if at == nil {
+		return fmt.Errorf("Can not set associated templates to nil")
+	}
+	//	fv.value.AssociatedTemplates = at
+	return nil
 }
 
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value

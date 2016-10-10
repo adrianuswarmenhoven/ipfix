@@ -42,7 +42,10 @@ func TestDataRecordBasic(t *testing.T) {
 	if err == nil {
 		t.Errorf("Should have gotten error for trying to marshal without template")
 	}
-	err = dr.AssociateTemplate(tr)
+	sesstmp := NewActiveTemplateList()
+	sesstmp.Set(257, tr)
+	err = dr.AssociateTemplates(sesstmp)
+	dr.SetTemplateID(257)
 	if err != nil {
 		t.Errorf("Got error associating template: %#v", tr)
 	}
@@ -65,7 +68,8 @@ func TestDataRecordBasic(t *testing.T) {
 	}
 	fmt.Println(dr)
 	dr2 := &DataRecord{}
-	dr2.AssociateTemplate(tr)
+	dr2.AssociateTemplates(sesstmp)
+	dr2.SetTemplateID(257)
 	dr2.UnmarshalBinary(compval)
 	fmt.Println(dr2)
 	for idx, item := range dr.FieldValues {
