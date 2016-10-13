@@ -35,35 +35,35 @@ func TestDataRecordBasic(t *testing.T) {
 	}
 	tr, err := NewTemplateRecord(257)
 	if err != nil {
-		t.Errorf("Error creating new template: %#v", err)
+		t.Errorf(errorPrefixMarker+"Error creating new template: %#v", err)
 	}
 	dr := &DataRecord{}
 	_, err = dr.MarshalBinary()
 	if err == nil {
-		t.Errorf("Should have gotten error for trying to marshal without template")
+		t.Errorf(errorPrefixMarker + "Should have gotten error for trying to marshal without template")
 	}
 	sesstmp := NewActiveTemplateList()
 	sesstmp.Set(257, tr)
 	err = dr.AssociateTemplates(sesstmp)
 	dr.SetTemplateID(257)
 	if err != nil {
-		t.Errorf("Got error associating template: %#v", tr)
+		t.Errorf(errorPrefixMarker+"Got error associating template: %#v", tr)
 	}
 	compval := []byte{}
 	for _, testcase := range testset {
 		newfsp, err := NewFieldSpecifier(testcase.TemplateEnterpriseID, testcase.TemplateInformationElementID, testcase.TemplateFieldLength)
 		if err != nil {
-			t.Errorf("Error creating new field specifier: %#v", err)
+			t.Errorf(errorPrefixMarker+"Error creating new field specifier: %#v", err)
 		}
 		tr.AddSpecifier(newfsp)
 		dr.FieldValues = append(dr.FieldValues, testcase.SourceVal)
 		bindata, err := dr.MarshalBinary()
 		if err != nil {
-			t.Errorf("Error marshalling datarecord: %#v", err)
+			t.Errorf(errorPrefixMarker+"Error marshalling datarecord: %#v", err)
 		}
 		compval = append(compval, testcase.CompEncoded...)
 		if !bytes.Equal(compval, bindata) {
-			t.Errorf("Error marshalling %#v: expected %#v, but got %#v", testcase.SourceVal, compval, bindata)
+			t.Errorf(errorPrefixMarker+"Error marshalling %#v: expected %#v, but got %#v", testcase.SourceVal, compval, bindata)
 		}
 	}
 	fmt.Println(dr)
@@ -74,7 +74,7 @@ func TestDataRecordBasic(t *testing.T) {
 	fmt.Println(dr2)
 	for idx, item := range dr.FieldValues {
 		if fmt.Sprintf("%#v", item.Value()) != fmt.Sprintf("%#v", dr2.FieldValues[idx].Value()) {
-			t.Errorf("Error unmarshalling %#v: expected %#v but got %#v", item, item.Value(), dr2.FieldValues[idx].Value())
+			t.Errorf(errorPrefixMarker+"Error unmarshalling %#v: expected %#v but got %#v", item, item.Value(), dr2.FieldValues[idx].Value())
 		}
 		fmt.Println("------\n", fmt.Sprintf("%#v", item.Value()), "\n", fmt.Sprintf("%#v", dr2.FieldValues[idx].Value()), "\n------\n")
 	}

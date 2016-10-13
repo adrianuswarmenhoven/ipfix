@@ -2,6 +2,8 @@ package ipfixmessage
 
 const (
 	testMarkerString = "**************************************************\n* %s\n**************************************************\n"
+
+	errorPrefixMarker = "\033[0;31m###\033[0m"
 )
 
 //An enumeration of the types, mainly for testing purposes

@@ -1205,18 +1205,6 @@ func (fv *FieldValueSubTemplateList) UnmarshalBinary(data []byte) error {
 	if fv.value.TemplateID < 256 {
 		return fmt.Errorf("Can not marshal without a template id")
 	}
-
-	curtemplate, err := fv.value.AssociatedTemplates.Get(fv.value.TemplateID)
-	if err != nil {
-		return fmt.Errorf("Can not marshal record, error in retrieving template %#v", err)
-	}
-	reclen := uint16(0)
-	for _, rec := range curtemplate.ScopeFieldSpecifiers {
-		reclen += uint16(rec.FieldLength)
-	}
-	for _, rec := range curtemplate.FieldSpecifiers {
-		reclen += uint16(rec.FieldLength)
-	}
 	cursor := uint16(3)
 	for cursor < uint16(len(data)) {
 		newdatrec := &DataRecord{
@@ -1224,7 +1212,7 @@ func (fv *FieldValueSubTemplateList) UnmarshalBinary(data []byte) error {
 			TemplateID:          fv.value.TemplateID,
 			FieldValues:         make([]FieldValue, 0, 0),
 		}
-		err = newdatrec.UnmarshalBinary(data[cursor:])
+		err := newdatrec.UnmarshalBinary(data[cursor:])
 		if err != nil {
 			return err
 		}

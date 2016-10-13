@@ -29,24 +29,24 @@ func TestFieldSpecifier(t *testing.T) {
 	for _, testcase := range testset {
 		fl, err := FieldLengthByID(int(testcase.EnterpriseID), int(testcase.InformationFieldElement))
 		if (err != nil) == testcase.MustNotFailCreate {
-			t.Errorf("Error determining field length of testcase %#v: %#v", testcase, err)
+			t.Errorf(errorPrefixMarker+"Error determining field length of testcase %#v: %#v", testcase, err)
 		}
 		fsp, err := NewFieldSpecifier(testcase.EnterpriseID, testcase.InformationFieldElement, fl)
 		if (err != nil) == testcase.MustNotFailCreate {
-			t.Errorf("Error creating new field specifier of testcase %#v: %#v", testcase, err)
+			t.Errorf(errorPrefixMarker+"Error creating new field specifier of testcase %#v: %#v", testcase, err)
 		}
 		binarydata, err := fsp.MarshalBinary()
 		if err != nil {
-			t.Errorf("Error marshalling new field specifier of testcase %#v: %#v", testcase, err)
+			t.Errorf(errorPrefixMarker+"Error marshalling new field specifier of testcase %#v: %#v", testcase, err)
 		}
 		if bytes.Equal(binarydata, testcase.CompEncoded) != testcase.MustNotFailEncode {
-			t.Errorf("Error marshalling %#v, became %v but should have been %v (%v)", testcase, binarydata, testcase.CompEncoded, testcase.MustNotFailEncode)
+			t.Errorf(errorPrefixMarker+"Error marshalling %#v, became %v but should have been %v (%v)", testcase, binarydata, testcase.CompEncoded, testcase.MustNotFailEncode)
 		}
 		if len(binarydata) > 0 && testcase.MustNotFailEncode {
 			fsp2, _ := NewFieldSpecifier(0, 0, 0)
 			fsp2.UnmarshalBinary(binarydata)
 			if fmt.Sprintf("%#v", fsp) != fmt.Sprintf("%#v", fsp2) {
-				t.Errorf("Error unmarshalling %#v, became %#v", fsp, fsp2)
+				t.Errorf(errorPrefixMarker+"Error unmarshalling %#v, became %#v", fsp, fsp2)
 			}
 		}
 

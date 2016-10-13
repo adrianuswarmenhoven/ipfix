@@ -23,8 +23,31 @@ type DataRecord struct {
 // Len returns the size in octets of the DataRecord
 func (datrec *DataRecord) Len() uint16 {
 	reclen := uint16(0)
-	for _, listitem := range datrec.FieldValues {
-		reclen += listitem.Len()
+	curtemplate, err := datrec.AssociatedTemplates.Get(datrec.TemplateID)
+	if err != nil {
+		return 0
+	}
+	NofScopeFields := len(curtemplate.ScopeFieldSpecifiers)
+	for fieldidx, listitem := range datrec.FieldValues {
+		tmplen := listitem.Len()
+		FieldSpec := &FieldSpecifier{}
+		if NofScopeFields > 0 {
+			if fieldidx < NofScopeFields {
+				FieldSpec = curtemplate.ScopeFieldSpecifiers[fieldidx]
+			} else {
+				FieldSpec = curtemplate.FieldSpecifiers[fieldidx-NofScopeFields]
+			}
+		} else {
+			FieldSpec = curtemplate.FieldSpecifiers[fieldidx]
+		}
+		if FieldSpec.FieldLength == VariableLength {
+			if tmplen < 256 {
+				tmplen++
+			} else {
+				tmplen += 3
+			}
+		}
+		reclen += tmplen
 	}
 	return reclen
 }
@@ -73,6 +96,7 @@ func (datrec *DataRecord) MarshalBinary() (data []byte, err error) {
 	if err != nil {
 		return nil, fmt.Errorf("Can not marshal record, error in retrieving template %#v", err)
 	}
+	NofScopeFields := len(curtemplate.ScopeFieldSpecifiers)
 	for fieldidx, listitem := range datrec.FieldValues {
 		item := []byte{}
 		switch listitem.(type) {
@@ -85,24 +109,25 @@ func (datrec *DataRecord) MarshalBinary() (data []byte, err error) {
 		if err != nil {
 			return nil, err
 		}
-		if curtemplate.FieldSpecifiers[fieldidx].FieldLength != VariableLength {
+		FieldSpec := &FieldSpecifier{}
+		if NofScopeFields > 0 {
+			if fieldidx < NofScopeFields {
+				FieldSpec = curtemplate.ScopeFieldSpecifiers[fieldidx]
+			} else {
+				FieldSpec = curtemplate.FieldSpecifiers[fieldidx-NofScopeFields]
+			}
+		} else {
+			FieldSpec = curtemplate.FieldSpecifiers[fieldidx]
+		}
+		if FieldSpec.FieldLength != VariableLength {
 			if len(item) != int(curtemplate.FieldSpecifiers[fieldidx].FieldLength) {
 				return nil, fmt.Errorf("Wrong marshalled size for item %#v, expected %d, but got %d", listitem, len(item), curtemplate.FieldSpecifiers[fieldidx].FieldLength)
 			}
 		} else {
 			var marshalLength []byte
-			switch listitem.(type) {
-			case *FieldValueBasicList, *FieldValueSubTemplateList, *FieldValueSubTemplateMultiList:
-				marshalLength, err = EncodeVariableLength(item, true)
-				if err != nil {
-					return nil, err
-				}
-
-			default:
-				marshalLength, err = EncodeVariableLength(item, false)
-				if err != nil {
-					return nil, err
-				}
+			marshalLength, err = EncodeVariableLength(item, false)
+			if err != nil {
+				return nil, err
 			}
 			marshalValue = append(marshalValue, marshalLength...)
 		}

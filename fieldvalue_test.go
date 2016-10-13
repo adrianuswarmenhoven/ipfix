@@ -40,22 +40,22 @@ func TestFieldValueValueGoTypes(t *testing.T) {
 	}
 	for testval, checkval := range testsetmatch {
 		if goTypeName(testval) != checkval {
-			t.Errorf("Should have gotten %d but got %d for %#v", checkval, goTypeName(testval), testval)
+			t.Errorf(errorPrefixMarker+"Should have gotten %d but got %d for %#v", checkval, goTypeName(testval), testval)
 		}
 	}
 
 	//Now checking the unhashables
 	if reflect.TypeOf(FieldValueMacAddress{}.value) != reflect.TypeOf(net.HardwareAddr{}) {
-		t.Errorf("Should have gotten %s but got %s for %#v", reflect.TypeOf(net.HardwareAddr{}), reflect.TypeOf(FieldValueMacAddress{}.value), FieldValueMacAddress{}.value)
+		t.Errorf(errorPrefixMarker+"Should have gotten %s but got %s for %#v", reflect.TypeOf(net.HardwareAddr{}), reflect.TypeOf(FieldValueMacAddress{}.value), FieldValueMacAddress{}.value)
 	}
 	if reflect.TypeOf(FieldValueIPv4Address{}.value) != reflect.TypeOf(net.IP{}) {
-		t.Errorf("Should have gotten %s but got %s for %#v", reflect.TypeOf(net.IP{}), reflect.TypeOf(FieldValueIPv4Address{}.value), FieldValueIPv4Address{}.value)
+		t.Errorf(errorPrefixMarker+"Should have gotten %s but got %s for %#v", reflect.TypeOf(net.IP{}), reflect.TypeOf(FieldValueIPv4Address{}.value), FieldValueIPv4Address{}.value)
 	}
 	if reflect.TypeOf(FieldValueIPv6Address{}.value) != reflect.TypeOf(net.IP{}) {
-		t.Errorf("Should have gotten %s but got %s for %#v", reflect.TypeOf(net.IP{}), reflect.TypeOf(FieldValueIPv6Address{}.value), FieldValueIPv6Address{}.value)
+		t.Errorf(errorPrefixMarker+"Should have gotten %s but got %s for %#v", reflect.TypeOf(net.IP{}), reflect.TypeOf(FieldValueIPv6Address{}.value), FieldValueIPv6Address{}.value)
 	}
 	if reflect.TypeOf(FieldValueOctetArray{}.value) != reflect.TypeOf([]byte{}) {
-		t.Errorf("Should have gotten %s but got %s for %#v", reflect.TypeOf([]byte{}), reflect.TypeOf(FieldValueOctetArray{}.value), FieldValueOctetArray{}.value)
+		t.Errorf(errorPrefixMarker+"Should have gotten %s but got %s for %#v", reflect.TypeOf([]byte{}), reflect.TypeOf(FieldValueOctetArray{}.value), FieldValueOctetArray{}.value)
 	}
 
 	//We don't check the RFC 6313 values here since they are complex types and all end up using the above Field Values anyway
@@ -150,8 +150,6 @@ var (
 				},
 			},
 		},
-
-		***MARKER***
 	}
 
 	subTemplateListA = SubTemplateList{
@@ -188,21 +186,21 @@ var (
 		},
 	}
 
-	subTemplateListB = SubTemplateList{
+	subTemplateListC = SubTemplateList{
 		Semantic:            AllOf,
 		TemplateID:          258,
 		AssociatedTemplates: &ActiveTemplates{Template: testSubTemplateListTemplates},
 		Records: []Record{
 			0: &DataRecord{
 				FieldValues: []FieldValue{
-					0: &FieldValueIPv4Address{value: net.ParseIP("127.0.0.1")},
-					1: &FieldValueIPv4Address{value: net.ParseIP("8.8.8.8")},
+					0: &FieldValueString{value: "www.google.com"},
+					1: &FieldValueString{"/apps"},
 				},
 			},
 			1: &DataRecord{
 				FieldValues: []FieldValue{
-					0: &FieldValueIPv4Address{value: net.ParseIP("4.4.4.4")},
-					1: &FieldValueIPv4Address{value: net.ParseIP("192.168.172.16")},
+					0: &FieldValueString{value: "tools.ietf.org"},
+					1: &FieldValueString{value: "/rfc/rfc6313.txt"},
 				},
 			},
 		},
@@ -278,16 +276,16 @@ func TestFieldValueSetGet(t *testing.T) {
 	for _, testcase := range testset {
 		err := testcase.TestVal.Set(testcase.CompVal)
 		if (err != nil) != testcase.MustFail {
-			t.Errorf("Testcase did not react correctly. Wanted fail(%v) but got fail(%v) for testcase %#v", testcase.MustFail, (err != nil), testcase)
+			t.Errorf(errorPrefixMarker+"Testcase did not react correctly. Wanted fail(%v) but got fail(%v) for testcase %#v", testcase.MustFail, (err != nil), testcase)
 		}
 		if !testcase.MustFail {
 			if !testcase.ByteCompare {
 				if testcase.TestVal.Value() != testcase.CompVal {
-					t.Errorf("Wrong value returned. Wanted %d but got %d for testcase %#v", testcase.CompVal, testcase.TestVal.Value(), testcase)
+					t.Errorf(errorPrefixMarker+"Wrong value returned. Wanted %d but got %d for testcase %#v", testcase.CompVal, testcase.TestVal.Value(), testcase)
 				}
 			} else {
 				if fmt.Sprintf("%v", testcase.TestVal.Value()) != fmt.Sprintf("%v", testcase.CompVal) {
-					t.Errorf("Wrong value returned. Wanted %v but got %v for testcase %#v", testcase.CompVal, testcase.TestVal.Value(), testcase)
+					t.Errorf(errorPrefixMarker+"Wrong value returned. Wanted %v but got %v for testcase %#v", testcase.CompVal, testcase.TestVal.Value(), testcase)
 				}
 			}
 		}
@@ -357,26 +355,26 @@ func TestMarshalEncoding(t *testing.T) {
 	for _, testcase := range testset {
 		binarydata, err := testcase.SourceVal.MarshalBinary()
 		if err != nil {
-			t.Errorf("Error marshalling %#v: %#v", testcase.SourceVal, err)
+			t.Errorf(errorPrefixMarker+"Error marshalling %#v: %#v", testcase.SourceVal, err)
 		}
 		lendata := []byte{}
 		if testcase.VariableLength {
 			lendata, err = EncodeVariableLength(binarydata, false)
 			if err != nil {
-				t.Errorf("Error encoding variable size %#v: %#v", testcase.SourceVal, err)
+				t.Errorf(errorPrefixMarker+"Error encoding variable size %#v: %#v", testcase.SourceVal, err)
 			}
 		}
 		casedata := append(lendata, binarydata...)
 		if !bytes.Equal(casedata, testcase.CompEncoded) {
-			t.Errorf("Error marshalling %#v, became %v but should have been %v", testcase.SourceVal, casedata, testcase.CompEncoded)
+			t.Errorf(errorPrefixMarker+"Error marshalling %#v, became %v but should have been %v", testcase.SourceVal, casedata, testcase.CompEncoded)
 		}
 		if testcase.VariableLength {
 			caselen, _, err := DecodeVariableLength(casedata[0:3])
 			if err != nil {
-				t.Errorf("Error decoding length of variable element %#v", err)
+				t.Errorf(errorPrefixMarker+"Error decoding length of variable element %#v", err)
 			}
 			if caselen != testcase.SourceVal.Len() {
-				t.Errorf("Error in decoding length of variable element, wanted %d, but got %d", testcase.SourceVal.Len(), caselen)
+				t.Errorf(errorPrefixMarker+"Error in decoding length of variable element, wanted %d, but got %d", testcase.SourceVal.Len(), caselen)
 			}
 		}
 	}
@@ -448,17 +446,17 @@ func TestFieldValueMarshalUnmarshal(t *testing.T) {
 	for _, testcase := range testset {
 		binarydata, err := testcase.SourceVal.MarshalBinary()
 		if err != nil {
-			t.Errorf("Error marshalling %#v: %#v", testcase.SourceVal, err)
+			t.Errorf(errorPrefixMarker+"Error marshalling %#v: %#v", testcase.SourceVal, err)
 		}
 		if len(binarydata) != int(testcase.SourceVal.Len()) {
-			t.Errorf("Error marshalling %#v: length of binary data should be %d, but was %d", testcase.SourceVal, testcase.SourceVal.Len(), len(binarydata))
+			t.Errorf(errorPrefixMarker+"Error marshalling %#v: length of binary data should be %d, but was %d", testcase.SourceVal, testcase.SourceVal.Len(), len(binarydata))
 		}
 		err = testcase.DestVal.UnmarshalBinary(binarydata)
 		if err != nil {
-			t.Errorf("Error unmarshalling %#v: %#v", testcase.SourceVal, err)
+			t.Errorf(errorPrefixMarker+"Error unmarshalling %#v: %#v", testcase.SourceVal, err)
 		}
 		if !reflect.DeepEqual(testcase.SourceVal, testcase.DestVal) || !reflect.DeepEqual(testcase.DestVal.Value(), testcase.CompVal) {
-			t.Errorf("Error in value after conversions, wanted %#v (%#v), but got %#v", testcase.SourceVal, testcase.CompVal, testcase.DestVal)
+			t.Errorf(errorPrefixMarker+"Error in value after conversions, wanted %#v (%#v), but got %#v", testcase.SourceVal, testcase.CompVal, testcase.DestVal)
 		}
 		if testcase.SourceVal.Len() < 12 {
 			fmt.Println(testcase.SourceVal.Value(), testcase.DestVal.Value(), testcase.CompVal)
@@ -477,24 +475,24 @@ func TestFieldValueMarshalUnmarshalBasicList(t *testing.T) {
 	for _, testcase := range testset {
 		binarydata, err := testcase.SourceVal.MarshalBinary()
 		if err != nil {
-			t.Errorf("Error marshalling %#v: %#v", testcase.SourceVal, err)
+			t.Errorf(errorPrefixMarker+"Error marshalling %#v: %#v", testcase.SourceVal, err)
 		}
 		if len(binarydata) != int(testcase.SourceVal.Len()) {
-			t.Errorf("Error marshalling %#v: length of binary data should be %d, but was %d", testcase.SourceVal, testcase.SourceVal.Len(), len(binarydata))
+			t.Errorf(errorPrefixMarker+"Error marshalling %#v: length of binary data should be %d, but was %d", testcase.SourceVal, testcase.SourceVal.Len(), len(binarydata))
 		}
 		err = testcase.DestVal.UnmarshalBinary(binarydata)
 		if err != nil {
-			t.Errorf("Error unmarshalling %#v: %#v", testcase.SourceVal, err)
+			t.Errorf(errorPrefixMarker+"Error unmarshalling %#v: %#v", testcase.SourceVal, err)
 		}
 		compbinarydata, err := testcase.DestVal.MarshalBinary()
 		if err != nil {
-			t.Errorf("Error marshalling %#v: %#v", testcase.DestVal, err)
+			t.Errorf(errorPrefixMarker+"Error marshalling %#v: %#v", testcase.DestVal, err)
 		}
 		if !reflect.DeepEqual(binarydata, compbinarydata) {
-			t.Errorf("Error in value after conversions, wanted %#v (%#v), but got %#v", testcase.SourceVal, testcase.CompVal, testcase.DestVal)
+			t.Errorf(errorPrefixMarker+"Error in value after conversions, wanted %#v (%#v), but got %#v", testcase.SourceVal, testcase.CompVal, testcase.DestVal)
 		}
 		if !reflect.DeepEqual(binarydata, testcase.CompVal) {
-			t.Errorf("Error in value after conversions, wanted %#v (%#v), but got %#v", testcase.SourceVal, testcase.CompVal, testcase.DestVal)
+			t.Errorf(errorPrefixMarker+"Error in value after conversions, wanted %#v (%#v), but got %#v", testcase.SourceVal, testcase.CompVal, testcase.DestVal)
 		}
 	}
 }
@@ -503,35 +501,38 @@ func TestFieldValueMarshalUnmarshalSubTemplateList(t *testing.T) {
 	var testset = []fieldvalueMarshalUnmarshalTestcase{
 		0: {SourceVal: &FieldValueSubTemplateList{value: subTemplateListA}, DestVal: &FieldValueSubTemplateList{value: SubTemplateList{TemplateID: 257, AssociatedTemplates: &ActiveTemplates{Template: testSubTemplateListTemplates}}}, CompVal: []byte{2, 1, 1, 127, 0, 0, 1, 8, 8, 8, 8}},
 		1: {SourceVal: &FieldValueSubTemplateList{value: subTemplateListB}, DestVal: &FieldValueSubTemplateList{value: SubTemplateList{TemplateID: 257, AssociatedTemplates: &ActiveTemplates{Template: testSubTemplateListTemplates}}}, CompVal: []byte{2, 1, 1, 127, 0, 0, 1, 8, 8, 8, 8, 4, 4, 4, 4, 192, 168, 172, 16}},
+		2: {SourceVal: &FieldValueSubTemplateList{value: subTemplateListC}, DestVal: &FieldValueSubTemplateList{value: SubTemplateList{TemplateID: 258, AssociatedTemplates: &ActiveTemplates{Template: testSubTemplateListTemplates}}}, CompVal: []byte{3, 1, 2, 14, 119, 119, 119, 46, 103, 111, 111, 103, 108, 101, 46, 99, 111, 109, 5, 47, 97, 112, 112, 115, 14, 116, 111, 111, 108, 115, 46, 105, 101, 116, 102, 46, 111, 114, 103, 16, 47, 114, 102, 99, 47, 114, 102, 99, 54, 51, 49, 51, 46, 116, 120, 116}},
 	}
 	for _, testcase := range testset {
 		binarydata, err := testcase.SourceVal.MarshalBinary()
 		if err != nil {
-			t.Errorf("Error marshalling %#v: %#v", testcase.SourceVal, err)
+			t.Errorf(errorPrefixMarker+"Error marshalling %#v: %#v", testcase.SourceVal, err)
 		}
+		fmt.Println(binarydata)
 		if len(binarydata) != int(testcase.SourceVal.Len()) {
-			t.Errorf("Error marshalling %#v: length of binary data should be %d, but was %d", testcase.SourceVal, testcase.SourceVal.Len(), len(binarydata))
+			t.Errorf(errorPrefixMarker+"Error marshalling %#v: length of binary data should be %d, but was %d", testcase.SourceVal, testcase.SourceVal.Len(), len(binarydata))
 		}
 		err = testcase.DestVal.UnmarshalBinary(binarydata)
 		fmt.Println(fmt.Sprintf("%#v", testcase.DestVal))
-		for _, rec := range testcase.DestVal.Value().(SubTemplateList).Records {
-			for _, fv := range rec.(*DataRecord).FieldValues {
-				fmt.Println(fv.Value())
+		for recidx, rec := range testcase.DestVal.Value().(SubTemplateList).Records {
+			fmt.Println("rec", recidx)
+			for idx, fv := range rec.(*DataRecord).FieldValues {
+				fmt.Println("\t", idx, fv.Value())
 			}
 		}
 		if err != nil {
-			t.Errorf("Error unmarshalling %#v: %#v", testcase.SourceVal, err)
+			t.Errorf(errorPrefixMarker+"Error unmarshalling %#v: %#v", testcase.SourceVal, err)
 		}
 		compbinarydata, err := testcase.DestVal.MarshalBinary()
 		fmt.Println(compbinarydata)
 		if err != nil {
-			t.Errorf("Error marshalling %#v: %#v", testcase.DestVal, err)
+			t.Errorf(errorPrefixMarker+"Error marshalling %#v: %#v", testcase.DestVal, err)
 		}
 		if !reflect.DeepEqual(binarydata, compbinarydata) {
-			t.Errorf("Error in value after conversions, wanted %#v (%#v), but got %#v", testcase.SourceVal, testcase.CompVal, testcase.DestVal)
+			t.Errorf(errorPrefixMarker+"Error in value after conversions, wanted %#v (%#v), but got %#v", testcase.SourceVal, testcase.CompVal, testcase.DestVal)
 		}
 		if !reflect.DeepEqual(binarydata, testcase.CompVal) {
-			t.Errorf("Error in value after conversions, wanted %#v (%#v), but got %#v", testcase.SourceVal, testcase.CompVal, testcase.DestVal)
+			t.Errorf(errorPrefixMarker+"Error in value after conversions, wanted %#v (%#v), but got %#v", testcase.SourceVal, testcase.CompVal, testcase.DestVal)
 		}
 	}
 }

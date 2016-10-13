@@ -30,7 +30,7 @@ func TestEmptySet(t *testing.T) {
 	}
 
 	if testset.SetHeader.Length != ipfixSetHeaderLength {
-		t.Errorf("Expected message length of %d but got %d", ipfixSetHeaderLength, testset.SetHeader.Length)
+		t.Errorf(errorPrefixMarker+"Expected message length of %d but got %d", ipfixSetHeaderLength, testset.SetHeader.Length)
 	}*/
 }
 
