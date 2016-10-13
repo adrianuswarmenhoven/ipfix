@@ -1,7 +1,5 @@
 package ipfixmessage
 
-//NEED TO FINISH TEMPLATE FIRST
-
 import "fmt"
 
 // SubTemplateList represents a list of zero or more instances of a structured data type, where the data type of each list element is the same and corresponds with a single Template Record.
@@ -35,4 +33,13 @@ func (stl *SubTemplateList) Len() uint16 {
 		stllen += listitem.Len()
 	}
 	return stllen
+}
+
+// AssociateTemplates sets the template to be used marshalling/unmarshalling this SubTemplateList
+func (stl *SubTemplateList) AssociateTemplates(at *ActiveTemplates) error {
+	if at == nil {
+		return fmt.Errorf("Can not use nil as Template List")
+	}
+	stl.AssociatedTemplates = at
+	return nil
 }

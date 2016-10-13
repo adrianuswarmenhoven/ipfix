@@ -1254,18 +1254,101 @@ func (fv *FieldValueSubTemplateMultiList) SetAssiocatedTemplates(at *ActiveTempl
 	if at == nil {
 		return fmt.Errorf("Can not set associated templates to nil")
 	}
-	//	fv.value.AssociatedTemplates = at
+	fv.value.AssociatedTemplates = at
 	return nil
 }
 
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
 func (fv *FieldValueSubTemplateMultiList) MarshalBinary() ([]byte, error) {
-	return nil, fmt.Errorf("Not yet implemented!")
+	if fv.value.AssociatedTemplates == nil {
+		return nil, fmt.Errorf("Can not marshal without associated templates")
+	}
+	marshalValue := make([]byte, 0, 0)
+	marshalValue = append(marshalValue, fv.value.Semantic)
+	for idx, subtpldat := range fv.value.SubTemplates {
+		if subtpldat.AssociatedTemplates == nil {
+			subtpldat.AssociateTemplates(fv.value.AssociatedTemplates)
+		}
+		if subtpldat.TemplateID < 256 {
+			return nil, fmt.Errorf("Can not marshal without a template id. Error in sub template %d (%#v)", idx, *subtpldat)
+		}
+
+		marshalTemplateID, err := marshalBinarySingleValue(subtpldat.TemplateID)
+		if err != nil {
+			return nil, err
+		}
+		marshalValue = append(marshalValue, marshalTemplateID...)
+
+		// Data Records Length
+		// This is the total length of the Data Records encoding for the Template ID previously specified, including the two bytes for the Template ID and the two bytes for the Data Records Length field itself.
+		// In the exceptional case of zero instances in the subTemplateMultiList, no data is encoded, only the Semantic field and Template ID field(s), and the Data Record Length field is set to zero.
+		enclen := uint16(subtpldat.Len() + uint16(4))
+		if len(subtpldat.Records) == 0 {
+			enclen = uint16(0)
+		}
+		marshalLen, err := marshalBinarySingleValue(enclen)
+		if err != nil {
+			return nil, err
+		}
+		marshalValue = append(marshalValue, marshalLen...)
+
+		for _, listitem := range subtpldat.Records {
+			listitem.(*DataRecord).AssociateTemplates(subtpldat.AssociatedTemplates)
+			listitem.(*DataRecord).SetTemplateID(subtpldat.TemplateID)
+			recordBinary, err := listitem.(*DataRecord).MarshalBinary()
+			if err != nil {
+				return nil, err
+			}
+			marshalValue = append(marshalValue, recordBinary...)
+		}
+	}
+	return marshalValue, nil
 }
 
 // UnmarshalBinary fills the value from Network Byte Order byte representation
 func (fv *FieldValueSubTemplateMultiList) UnmarshalBinary(data []byte) error {
-	return fmt.Errorf("Not yet implemented!")
+	if fv.value.AssociatedTemplates == nil {
+		return fmt.Errorf("Can not marshal without associated templates")
+	}
+	if data == nil || len(data) == 0 {
+		return fmt.Errorf("Can not unmarshal, invalid data. %#v", data)
+	}
+
+	fv.value = SubTemplateMultiList{AssociatedTemplates: fv.value.AssociatedTemplates, SubTemplates: make([]*SubTemplateData, 0, 0)} //Create a clean copy with correct data, may not be necessary
+
+	cursor := uint16(1)
+	for cursor < uint16(len(data)) {
+		newtplid := binary.BigEndian.Uint16(data[cursor : cursor+2])
+		if newtplid < 256 {
+			return fmt.Errorf("Can not unmarshal without a proper template id")
+		}
+		cursor += 2
+		newtpllen := binary.BigEndian.Uint16(data[cursor : cursor+2])
+		newsubtemplate, err := NewSubTemplateData(newtplid)
+		if err != nil {
+			return err
+		}
+		cursor += 2
+		if newtpllen > 4 { //Length is including template and length itself
+			newsubtemplate.AssociateTemplates(fv.value.AssociatedTemplates)
+			for cursor < newtpllen-4 {
+				newdatrec := &DataRecord{
+					AssociatedTemplates: fv.value.AssociatedTemplates,
+					TemplateID:          newtplid,
+					FieldValues:         make([]FieldValue, 0, 0),
+				}
+				err := newdatrec.UnmarshalBinary(data[cursor:])
+				if err != nil {
+					return err
+				}
+				newsubtemplate.Records = append(newsubtemplate.Records, newdatrec)
+				cursor += newdatrec.Len()
+			}
+			cursor += newtpllen
+		}
+		fv.value.SubTemplates = append(fv.value.SubTemplates, newsubtemplate)
+	}
+	return nil
 }
 
 // Len returns the number of octets this FieldValue is wide
