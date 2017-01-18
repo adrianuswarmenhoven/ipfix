@@ -864,6 +864,16 @@ func NewFieldValueByID(enterpriseid int, elementid int) (FieldValue, error) {
 			return &FieldValueString{}, nil // mobileMSISDN
 		case 457:
 			return &FieldValueUnsigned16{}, nil // httpStatusCode
+		case 458:
+			return &FieldValueUnsigned16{}, nil // sourceTransportPortsLimit
+		case 459:
+			return &FieldValueString{}, nil // httpRequestMethod
+		case 460:
+			return &FieldValueString{}, nil // httpRequestHost
+		case 461:
+			return &FieldValueString{}, nil // httpRequestTarget
+		case 462:
+			return &FieldValueString{}, nil // httpMessageVersion
 		default:
 			return nil, fmt.Errorf("No such element: E%did%d", enterpriseid, elementid)
 		}
@@ -2109,6 +2119,16 @@ func FieldLengthByID(enterpriseid int, elementid int) (uint16, error) {
 			return 65535, nil // mobileMSISDN
 		case 457:
 			return 2, nil // httpStatusCode
+		case 458:
+			return 2, nil // sourceTransportPortsLimit
+		case 459:
+			return 65535, nil // httpRequestMethod
+		case 460:
+			return 65535, nil // httpRequestHost
+		case 461:
+			return 65535, nil // httpRequestTarget
+		case 462:
+			return 65535, nil // httpMessageVersion
 		default:
 			return 0, fmt.Errorf("No such element: E%did%d", enterpriseid, elementid)
 		}
@@ -2495,4 +2515,3 @@ func FieldLengthByID(enterpriseid int, elementid int) (uint16, error) {
 	}
 	return 0, nil
 }
-
