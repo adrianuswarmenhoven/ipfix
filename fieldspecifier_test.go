@@ -6,8 +6,14 @@ import (
 	"testing"
 )
 
+const (
+	fieldspecifier_test_print = false
+)
+
 func TestFieldSpecifierMarker(t *testing.T) {
-	fmt.Printf(testMarkerString, "Field Specifier")
+	if fieldspecifier_test_print {
+		fmt.Printf(testMarkerString, "Field Specifier")
+	}
 }
 
 type fieldSpecifierTestCase struct {

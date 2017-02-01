@@ -7,8 +7,14 @@ import (
 	"testing"
 )
 
+const (
+	datarecord_test_print = false
+)
+
 func TestDataRecordMarker(t *testing.T) {
-	fmt.Printf(testMarkerString, "Data Record")
+	if datarecord_test_print {
+		fmt.Printf(testMarkerString, "Data Record")
+	}
 }
 
 type dataRecordTestcase struct {
@@ -66,16 +72,22 @@ func TestDataRecordBasic(t *testing.T) {
 			t.Errorf(errorPrefixMarker+"Error marshalling %#v: expected %#v, but got %#v", testcase.SourceVal, compval, bindata)
 		}
 	}
-	fmt.Println(dr)
+	if datarecord_test_print {
+		fmt.Println(dr)
+	}
 	dr2 := &DataRecord{}
 	dr2.AssociateTemplates(sesstmp)
 	dr2.SetTemplateID(257)
 	dr2.UnmarshalBinary(compval)
-	fmt.Println(dr2)
+	if datarecord_test_print {
+		fmt.Println(dr2)
+	}
 	for idx, item := range dr.FieldValues {
 		if fmt.Sprintf("%#v", item.Value()) != fmt.Sprintf("%#v", dr2.FieldValues[idx].Value()) {
 			t.Errorf(errorPrefixMarker+"Error unmarshalling %#v: expected %#v but got %#v", item, item.Value(), dr2.FieldValues[idx].Value())
 		}
-		fmt.Println("------\n", fmt.Sprintf("%#v", item.Value()), "\n", fmt.Sprintf("%#v", dr2.FieldValues[idx].Value()), "\n------\n")
+		if datarecord_test_print {
+			fmt.Println("------\n", fmt.Sprintf("%#v", item.Value()), "\n", fmt.Sprintf("%#v", dr2.FieldValues[idx].Value()), "\n------")
+		}
 	}
 }

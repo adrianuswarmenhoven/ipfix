@@ -10,8 +10,14 @@ import (
 	"time"
 )
 
+const (
+	fieldvalue_test_print = false
+)
+
 func TestFieldValueMarker(t *testing.T) {
-	fmt.Printf(testMarkerString, "FieldValue")
+	if fieldvalue_test_print {
+		fmt.Printf(testMarkerString, "FieldValue")
+	}
 }
 
 func TestFieldValueValueGoTypes(t *testing.T) {
@@ -458,7 +464,7 @@ func TestFieldValueMarshalUnmarshal(t *testing.T) {
 		if !reflect.DeepEqual(testcase.SourceVal, testcase.DestVal) || !reflect.DeepEqual(testcase.DestVal.Value(), testcase.CompVal) {
 			t.Errorf(errorPrefixMarker+"Error in value after conversions, wanted %#v (%#v), but got %#v", testcase.SourceVal, testcase.CompVal, testcase.DestVal)
 		}
-		if testcase.SourceVal.Len() < 12 {
+		if fieldvalue_test_print && testcase.SourceVal.Len() < 12 {
 			fmt.Println(testcase.SourceVal.Value(), testcase.DestVal.Value(), testcase.CompVal)
 		}
 	}
@@ -508,23 +514,30 @@ func TestFieldValueMarshalUnmarshalSubTemplateList(t *testing.T) {
 		if err != nil {
 			t.Errorf(errorPrefixMarker+"Error marshalling %#v: %#v", testcase.SourceVal, err)
 		}
-		fmt.Println(binarydata)
+		if fieldvalue_test_print {
+			fmt.Println(binarydata)
+		}
 		if len(binarydata) != int(testcase.SourceVal.Len()) {
 			t.Errorf(errorPrefixMarker+"Error marshalling %#v: length of binary data should be %d, but was %d", testcase.SourceVal, testcase.SourceVal.Len(), len(binarydata))
 		}
 		err = testcase.DestVal.UnmarshalBinary(binarydata)
-		fmt.Println(fmt.Sprintf("%#v", testcase.DestVal))
-		for recidx, rec := range testcase.DestVal.Value().(SubTemplateList).Records {
-			fmt.Println("rec", recidx)
-			for idx, fv := range rec.(*DataRecord).FieldValues {
-				fmt.Println("\t", idx, fv.Value())
+		if fieldvalue_test_print {
+			fmt.Println(fmt.Sprintf("%#v", testcase.DestVal))
+
+			for recidx, rec := range testcase.DestVal.Value().(SubTemplateList).Records {
+				fmt.Println("rec", recidx)
+				for idx, fv := range rec.(*DataRecord).FieldValues {
+					fmt.Println("\t", idx, fv.Value())
+				}
 			}
 		}
 		if err != nil {
 			t.Errorf(errorPrefixMarker+"Error unmarshalling %#v: %#v", testcase.SourceVal, err)
 		}
 		compbinarydata, err := testcase.DestVal.MarshalBinary()
-		fmt.Println(compbinarydata)
+		if fieldvalue_test_print {
+			fmt.Println(compbinarydata)
+		}
 		if err != nil {
 			t.Errorf(errorPrefixMarker+"Error marshalling %#v: %#v", testcase.DestVal, err)
 		}

@@ -5,8 +5,14 @@ import (
 	"testing"
 )
 
+const (
+	activetemplatelist_test_print = false
+)
+
 func TestTemplateListMarker(t *testing.T) {
-	fmt.Printf(testMarkerString, "Template List")
+	if activetemplatelist_test_print {
+		fmt.Printf(testMarkerString, "Template List")
+	}
 }
 
 func TestTemplateListBasic(t *testing.T) {

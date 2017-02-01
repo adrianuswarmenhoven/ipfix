@@ -5,6 +5,16 @@ import (
 	"testing"
 )
 
+const (
+	ipfixset_test_print = true
+)
+
+func TestSetMarker(t *testing.T) {
+	if ipfixset_test_print {
+		fmt.Printf(testMarkerString, "Set")
+	}
+}
+
 func TestEmptySet(t *testing.T) {
 	testset, err := NewSet(0)
 
@@ -61,8 +71,9 @@ func TestSetWithTemplateRecord(t *testing.T) {
 	}
 
 	testset.Pad(4)
-
-	fmt.Println(testset)
+	if ipfixset_test_print {
+		fmt.Println(testset)
+	}
 }
 
 func init() {

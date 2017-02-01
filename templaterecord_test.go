@@ -5,8 +5,14 @@ import (
 	"testing"
 )
 
+const (
+	templaterecord_test_print = false
+)
+
 func TestTemplateRecordMarker(t *testing.T) {
-	fmt.Printf(testMarkerString, "Template Record")
+	if templaterecord_test_print {
+		fmt.Printf(testMarkerString, "Template Record")
+	}
 }
 
 func TestTemplateRecordBasic(t *testing.T) {
@@ -19,25 +25,32 @@ func TestTemplateRecordBasic(t *testing.T) {
 	if err != nil {
 		t.Errorf(errorPrefixMarker+"Error creating new template: %#v", err)
 	}
-	fmt.Println(tr)
+	if templaterecord_test_print {
+		fmt.Println(tr)
+	}
 	fsp1, err := NewFieldSpecifier(0, 12, 4)
 	if err != nil {
 		t.Errorf(errorPrefixMarker+"Error creating new field specifier: %#v", err)
 	}
 	tr.AddSpecifier(fsp1)
-	fmt.Println(tr)
+	if templaterecord_test_print {
+		fmt.Println(tr)
+	}
 	fsp2, err := NewFieldSpecifier(44913, 20, VariableLength)
 	if err != nil {
 		t.Errorf(errorPrefixMarker+"Error creating new field specifier: %#v", err)
 	}
 	tr.AddSpecifier(fsp2)
-	fmt.Println(tr)
+	if templaterecord_test_print {
+		fmt.Println(tr)
+	}
 	binarydata, err := tr.MarshalBinary()
 	if err != nil {
 		t.Errorf(errorPrefixMarker+"Error marshalling: %#v", err)
 	}
-
-	fmt.Println(binarydata)
+	if templaterecord_test_print {
+		fmt.Println(binarydata)
+	}
 	tr2, err := NewTemplateRecord(257)
 	if err != nil {
 		t.Errorf(errorPrefixMarker+"Error creating new template: %#v", err)
@@ -46,7 +59,9 @@ func TestTemplateRecordBasic(t *testing.T) {
 	if err != nil {
 		t.Errorf(errorPrefixMarker+"Error marshalling: %#v", err)
 	}
-	fmt.Println(tr2)
+	if templaterecord_test_print {
+		fmt.Println(tr2)
+	}
 }
 
 func TestOptionsTemplateRecordBasic(t *testing.T) {
@@ -59,43 +74,57 @@ func TestOptionsTemplateRecordBasic(t *testing.T) {
 	if err != nil {
 		t.Errorf(errorPrefixMarker+"Error creating new template: %#v", err)
 	}
-	fmt.Println(tr)
+	if templaterecord_test_print {
+		fmt.Println(tr)
+	}
 	fsp1, err := NewFieldSpecifier(0, 12, 4)
 	if err != nil {
 		t.Errorf(errorPrefixMarker+"Error creating new field specifier: %#v", err)
 	}
 	tr.AddSpecifier(fsp1)
-	fmt.Println(tr)
+	if templaterecord_test_print {
+		fmt.Println(tr)
+	}
 	fsp2, err := NewFieldSpecifier(44913, 20, VariableLength)
 	if err != nil {
 		t.Errorf(errorPrefixMarker+"Error creating new field specifier: %#v", err)
 	}
 	tr.AddSpecifier(fsp2)
-	fmt.Println(tr)
+	if templaterecord_test_print {
+		fmt.Println(tr)
+	}
 	binarydata, err := tr.MarshalBinary()
 	if err != nil {
 		t.Errorf(errorPrefixMarker+"Error marshalling: %#v", err)
 	}
 
-	fmt.Println(tr)
+	if templaterecord_test_print {
+		fmt.Println(tr)
+	}
 	ofsp1, err := NewFieldSpecifier(0, 12, 4)
 	if err != nil {
 		t.Errorf(errorPrefixMarker+"Error creating new field specifier: %#v", err)
 	}
 	tr.AddScopeSpecifier(ofsp1)
-	fmt.Println(tr)
+	if templaterecord_test_print {
+		fmt.Println(tr)
+	}
 	ofsp2, err := NewFieldSpecifier(44913, 20, VariableLength)
 	if err != nil {
 		t.Errorf(errorPrefixMarker+"Error creating new field specifier: %#v", err)
 	}
 	tr.AddScopeSpecifier(ofsp2)
-	fmt.Println(tr)
+	if templaterecord_test_print {
+		fmt.Println(tr)
+	}
 	binarydata, err = tr.MarshalBinary()
 	if err != nil {
 		t.Errorf(errorPrefixMarker+"Error marshalling: %#v", err)
 	}
 
-	fmt.Println(binarydata)
+	if templaterecord_test_print {
+		fmt.Println(binarydata)
+	}
 	tr2, err := NewOptionsTemplateRecord(257)
 	if err != nil {
 		t.Errorf(errorPrefixMarker+"Error creating new template: %#v", err)
@@ -104,5 +133,7 @@ func TestOptionsTemplateRecordBasic(t *testing.T) {
 	if err != nil {
 		t.Errorf(errorPrefixMarker+"Error marshalling: %#v", err)
 	}
-	fmt.Println(tr2)
+	if templaterecord_test_print {
+		fmt.Println(tr2)
+	}
 }
