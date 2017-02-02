@@ -34,14 +34,10 @@ func TestEmptySet(t *testing.T) {
 		t.Fatalf("New IPFIX Set creation failed: %#v", err)
 	}
 
-	/*err = testset.Finalize(0)
-	if err != nil {
-		t.Fatalf("Finalize failed: %#v", err)
+	if ipfixset_test_print {
+		fmt.Println(testset.MarshalBinary())
 	}
 
-	if testset.SetHeader.Length != ipfixSetHeaderLength {
-		t.Errorf(errorPrefixMarker+"Expected message length of %d but got %d", ipfixSetHeaderLength, testset.SetHeader.Length)
-	}*/
 }
 
 func TestSetWithTemplateRecord(t *testing.T) {
@@ -53,7 +49,7 @@ func TestSetWithTemplateRecord(t *testing.T) {
 	if err != nil {
 		t.Fatalf("New Template Record creation failed: %#v", err)
 	}
-	newfsp, err := NewFieldSpecifier(12345, 100, 8)
+	newfsp, err := NewFieldSpecifier(123, 258, 8)
 	if err != nil {
 		t.Fatalf("New Field Specifier creation failed: %#v", err)
 	}
@@ -65,14 +61,43 @@ func TestSetWithTemplateRecord(t *testing.T) {
 	}
 	newtemplrec.AddSpecifier(newfsp2)
 
+	newfsp3, err := NewFieldSpecifier(12345, 102, 4)
+	if err != nil {
+		t.Fatalf("New Field Specifier creation failed: %#v", err)
+	}
+	newtemplrec.AddSpecifier(newfsp3)
+
 	err = testset.AddRecord(newtemplrec)
 	if err != nil {
 		t.Fatalf("Template Record Addition to set failed: %#v", err)
 	}
 
-	testset.Pad(4)
+	newtemplrec2, err := NewTemplateRecord(1010)
+	if err != nil {
+		t.Fatalf("New Template Record creation failed: %#v", err)
+	}
+	newfsp4, err := NewFieldSpecifier(456, 100, 8)
+	if err != nil {
+		t.Fatalf("New Field Specifier creation failed: %#v", err)
+	}
+	newtemplrec2.AddSpecifier(newfsp4)
+
+	err = testset.AddRecord(newtemplrec2)
+	if err != nil {
+		t.Fatalf("Template Record Addition to set failed: %#v", err)
+	}
+	testset.Pad(8)
+	data, err := testset.MarshalBinary()
+	if err != nil {
+		t.Fatalf("Marshalling set failed: %#v", err)
+	}
+	expectedmarshalresult := []byte{0, 2, 0, 32, 16, 146, 0, 3, 129, 2, 0, 8, 0, 0, 0, 123, 128, 101, 0, 4, 0, 0, 48, 57, 128, 102, 0, 4, 0, 0, 48, 57, 128, 102, 0, 4, 0, 0, 48, 57, 3, 242, 0, 1, 128, 100, 0, 8, 0, 0, 1, 200, 0, 0, 0, 0}
+	if fmt.Sprintf("%+v", data) != fmt.Sprintf("%+v", expectedmarshalresult) {
+		t.Fatalf("Marshalling failed. Expected %+v but got %+v", expectedmarshalresult, data)
+	}
 	if ipfixset_test_print {
 		fmt.Println(testset)
+		fmt.Println(testset.MarshalBinary())
 	}
 }
 

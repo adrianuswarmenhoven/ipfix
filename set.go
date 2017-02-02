@@ -1,6 +1,8 @@
 package ipfixmessage
 
 import (
+	"bytes"
+	"encoding/binary"
 	"fmt"
 )
 
@@ -15,6 +17,9 @@ type Set struct {
 	SetID   uint16    //Set ID value identifies the Set.  A value of 2 is reserved for the Template Set.  A value of 3 is reserved for the Option Template Set.  All other values from 4 to 255 are reserved for future use. Values above 255 are used for Data Sets.
 	Records []*Record //Various types of record, depending on the SetID value (or rather, type of IPFIX set)
 	Padding uint16    //Optional padding bytes (only the number, the actual bytes will be added in encoding)
+
+	//AssociatedTemplates Templates points to the list of active templates (whether in a session or not). Without a template record a data record can not be encoded or decoded
+	AssociatedTemplates *ActiveTemplates
 }
 
 /* N.B. per Padding:
@@ -39,13 +44,24 @@ func NewSet(setid uint16) (*Set, error) {
 	}, nil
 }
 
+// AssociateTemplates sets the template to be used marshalling/unmarshalling this DataRecord
+func (ipfixset *Set) AssociateTemplates(at *ActiveTemplates) error {
+	if at == nil {
+		return fmt.Errorf("Can not use nil as Template List")
+	}
+	ipfixset.AssociatedTemplates = at
+	return nil
+}
+
 // Len returns the size in octets of the Set
 func (ipfixset *Set) Len() uint16 {
 	setlen := uint16(4) //We start out with 2 bytes for ID and 2 bytes for length
 	for _, rec := range ipfixset.Records {
 		setlen += (*rec).Len()
 	}
-	setlen += ipfixset.Padding
+	if ipfixset.Padding > 0 {
+		setlen += (ipfixset.Padding - (setlen % ipfixset.Padding)) % ipfixset.Padding
+	}
 	return setlen
 }
 
@@ -76,23 +92,100 @@ func (ipfixset *Set) AddRecord(rec Record) error {
 // The paddingboundary is the number of octets to align to, for example 8 for 8-octet boundaries.
 // If the result is greater than 0 then padding will be added to fill the set to that boundary.
 func (ipfixset *Set) Pad(paddingboundary uint16) {
-	//Calculate the length of the message
-	ipfixset.Padding = paddingboundary - (ipfixset.Len() % paddingboundary)
+	ipfixset.Padding = paddingboundary
 }
 
 // MarshalBinary satisfies the encoding/BinaryMarshaler interface
-// BUG(aw): NOT IMPLEMENTED
 func (ipfixset *Set) MarshalBinary() (data []byte, err error) {
-	//If template or optionstemplate do not use associate
-	return nil, fmt.Errorf("Not yet implemented!")
+	//Set ID value identifies the Set.  A value of 2 is reserved for the Template Set.  A value of 3 is reserved for the Option Template Set.
+	//All other values from 4 to 255 are reserved for future use. Values above 255 are used for Data Sets.
+	if ipfixset.SetID > 3 && ipfixset.SetID < 256 && ipfixset.AssociatedTemplates == nil {
+		return nil, fmt.Errorf("Need associated templates for Set ID %d", ipfixset.SetID)
+	}
+	buf := new(bytes.Buffer) //should get from pool?
+
+	//   Each Set Header field is exported in network format.  The fields are defined as follows:
+	//   Set ID
+	//   Length
+	//      Total length of the Set, in octets, including the Set Header, all records, and the optional padding.
+	//      Because an individual Set MAY contain multiple records, the Length value MUST be used to determine the position of the next Set.
+	err = binary.Write(buf, binary.BigEndian, ipfixset.SetID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = binary.Write(buf, binary.BigEndian, ipfixset.Len())
+	if err != nil {
+		return nil, err
+	}
+	data = buf.Bytes()
+	for _, rec := range ipfixset.Records {
+		recdat, err := (*rec).MarshalBinary()
+		if err != nil {
+			return nil, err
+		}
+		data = append(data, recdat...)
+	}
+	if ipfixset.Padding > 0 {
+		padlen := int(ipfixset.Len()) - len(data)
+		data = append(data, make([]byte, padlen, padlen)...)
+	}
+	return data, nil
 }
 
 // UnmarshalBinary satisfies the encoding/BinaryUnmarshaler interface
-// BUG(aw): NOT IMPLEMENTED
 func (ipfixset *Set) UnmarshalBinary(data []byte) error {
-	if data == nil || len(data) == 0 {
-		return fmt.Errorf("Can not unmarshal, invalid data. %#v", data)
-	}
+	/*
+		if data == nil || len(data) < 4 {
+			return fmt.Errorf("Can not unmarshal, invalid data. %#v", data)
+		}
 
-	return fmt.Errorf("Not yet implemented!")
+		ipfixset.SetID = binary.BigEndian.Uint16(data[0:2])
+		datalength := binary.BigEndian.Uint16(data[2:4])
+		tmprec := &record
+
+		tmplrec.TemplateID = binary.BigEndian.Uint16(data[0:2])
+		setlength := binary.BigEndian.Uint16(data[2:4])
+		cursor := uint16(4)
+		//Set ID value identifies the Set.  A value of 2 is reserved for the Template Set.  A value of 3 is reserved for the Option Template Set.
+		//All other values from 4 to 255 are reserved for future use. Values above 255 are used for Data Sets.
+		switch {
+		case tmplrec.TemplateID < 2, tmplrec.TemplateID > 3 && tmplrec.TemplateID < 256:
+			return nil, fmt.Errorf("Invalid template ID: %d", tmplrec.TemplateID)
+		case tmplrec.TemplateID == 2: //We do the template records
+		case tmplrec.TemplateID == 3: //We do the Option Template Set
+		default: //We do a data set
+
+		}
+			totalFieldCount := binary.BigEndian.Uint16(data[2:4])
+			scopeFieldCount := uint16(0)
+			cursor := uint16(4)
+			if tmplrec.ScopeFieldSpecifiers != nil {
+				scopeFieldCount = binary.BigEndian.Uint16(data[4:6])
+				cursor = 6
+			}
+
+			for cnt := uint16(0); cnt < scopeFieldCount; cnt++ {
+				scopeField := &FieldSpecifier{}
+				if (data[cursor] & 128) != 0 {
+					scopeField.UnmarshalBinary(data[cursor : cursor+8])
+					cursor += uint16(8)
+				} else {
+					scopeField.UnmarshalBinary(data[cursor : cursor+4])
+					cursor += uint16(4)
+				}
+				tmplrec.ScopeFieldSpecifiers = append(tmplrec.ScopeFieldSpecifiers, scopeField)
+			}
+			for cnt := uint16(0); cnt < (totalFieldCount - scopeFieldCount); cnt++ {
+				fieldSpecifier := &FieldSpecifier{}
+				if (data[cursor] & 128) != 0 {
+					fieldSpecifier.UnmarshalBinary(data[cursor : cursor+8])
+					cursor += uint16(8)
+				} else {
+					fieldSpecifier.UnmarshalBinary(data[cursor : cursor+4])
+					cursor += uint16(4)
+				}
+				tmplrec.FieldSpecifiers = append(tmplrec.FieldSpecifiers, fieldSpecifier)
+			}*/
+	return nil
 }

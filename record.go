@@ -9,6 +9,8 @@ package ipfixmessage
 
 // Record defines the interface for IPFIX Set Records
 type Record interface {
-	Len() uint16    // The size in Octets of this record, when Marshalled
-	String() string // Return a string representation
+	Len() uint16                    // The size in Octets of this record, when Marshalled
+	String() string                 // Return a string representation
+	MarshalBinary() ([]byte, error) //Returns a binary representation
+	UnmarshalBinary([]byte) error   //Returns a record from a binary representation
 }

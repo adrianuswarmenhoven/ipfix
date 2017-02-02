@@ -187,7 +187,7 @@ func (tmplrec *TemplateRecord) MarshalBinary() (data []byte, err error) {
 
 // UnmarshalBinary satisfies the encoding/BinaryUnmarshaler interface
 func (tmplrec *TemplateRecord) UnmarshalBinary(data []byte) error {
-	if data == nil || len(data) == 0 {
+	if data == nil || len(data) < 6 {
 		return fmt.Errorf("Can not unmarshal, invalid data. %#v", data)
 	}
 	tmplrec.TemplateID = binary.BigEndian.Uint16(data[0:2])
