@@ -91,13 +91,22 @@ func TestSetWithTemplateRecord(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Marshalling set failed: %#v", err)
 	}
-	expectedmarshalresult := []byte{0, 2, 0, 32, 16, 146, 0, 3, 129, 2, 0, 8, 0, 0, 0, 123, 128, 101, 0, 4, 0, 0, 48, 57, 128, 102, 0, 4, 0, 0, 48, 57, 128, 102, 0, 4, 0, 0, 48, 57, 3, 242, 0, 1, 128, 100, 0, 8, 0, 0, 1, 200, 0, 0, 0, 0}
+	expectedmarshalresult := []byte{0, 2, 0, 48, 16, 146, 0, 3, 129, 2, 0, 8, 0, 0, 0, 123, 128, 101, 0, 4, 0, 0, 48, 57, 128, 102, 0, 4, 0, 0, 48, 57, 3, 242, 0, 1, 128, 100, 0, 8, 0, 0, 1, 200, 0, 0, 0, 0}
 	if fmt.Sprintf("%+v", data) != fmt.Sprintf("%+v", expectedmarshalresult) {
-		t.Fatalf("Marshalling failed. Expected %+v but got %+v", expectedmarshalresult, data)
+		t.Fatalf("Marshalling failed. Expected \n%+v but got \n%+v", expectedmarshalresult, data)
 	}
 	if ipfixset_test_print {
 		fmt.Println(testset)
 		fmt.Println(testset.MarshalBinary())
+	}
+
+	umtestset := NewBlankSet()
+	err = umtestset.UnmarshalBinary(expectedmarshalresult)
+	fmt.Println(err, "aaaa")
+	umtestset.Pad(8) //Can not implicitly determine padding boundary
+
+	if fmt.Sprintf("%s", umtestset) != fmt.Sprintf("%s", testset) {
+		t.Fatalf("Expected: \n%s\nbut got:\n%s", testset, umtestset)
 	}
 }
 

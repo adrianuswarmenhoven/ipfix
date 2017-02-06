@@ -44,6 +44,15 @@ func NewSet(setid uint16) (*Set, error) {
 	}, nil
 }
 
+// NewSet creates a new IPFIX Set for unmarshalling
+func NewBlankSet() *Set {
+	return &Set{
+		SetID:   uint16(0),
+		Padding: uint16(0),
+		Records: make([]*Record, 0, 0),
+	}
+}
+
 // AssociateTemplates sets the template to be used marshalling/unmarshalling this DataRecord
 func (ipfixset *Set) AssociateTemplates(at *ActiveTemplates) error {
 	if at == nil {
@@ -135,57 +144,46 @@ func (ipfixset *Set) MarshalBinary() (data []byte, err error) {
 
 // UnmarshalBinary satisfies the encoding/BinaryUnmarshaler interface
 func (ipfixset *Set) UnmarshalBinary(data []byte) error {
-	/*
-		if data == nil || len(data) < 4 {
-			return fmt.Errorf("Can not unmarshal, invalid data. %#v", data)
-		}
+	if data == nil || len(data) < 4 {
+		return fmt.Errorf("Can not unmarshal, invalid data. %#v", data)
+	}
 
-		ipfixset.SetID = binary.BigEndian.Uint16(data[0:2])
-		datalength := binary.BigEndian.Uint16(data[2:4])
-		tmprec := &record
+	ipfixset.SetID = binary.BigEndian.Uint16(data[0:2])
+	datalength := binary.BigEndian.Uint16(data[2:4])
+	cursor := uint16(4)
 
-		tmplrec.TemplateID = binary.BigEndian.Uint16(data[0:2])
-		setlength := binary.BigEndian.Uint16(data[2:4])
-		cursor := uint16(4)
+	for cursor < datalength { //We always need at least 4 bytes to determine Template ID and Field Count
 		//Set ID value identifies the Set.  A value of 2 is reserved for the Template Set.  A value of 3 is reserved for the Option Template Set.
 		//All other values from 4 to 255 are reserved for future use. Values above 255 are used for Data Sets.
 		switch {
-		case tmplrec.TemplateID < 2, tmplrec.TemplateID > 3 && tmplrec.TemplateID < 256:
-			return nil, fmt.Errorf("Invalid template ID: %d", tmplrec.TemplateID)
-		case tmplrec.TemplateID == 2: //We do the template records
-		case tmplrec.TemplateID == 3: //We do the Option Template Set
-		default: //We do a data set
+		case ipfixset.SetID == 2, ipfixset.SetID == 3: //We do the template or option template set
+			if (cursor + 4) >= datalength { //There are no following fields after the template header
+				cursor += 4
+				break
+			}
+			tmprec := &TemplateRecord{}
+			err := tmprec.UnmarshalBinary(data[cursor:])
+			if err != nil {
+				return err
+			}
+			cursor += tmprec.Len()
+			ipfixset.AddRecord(tmprec)
+		case ipfixset.SetID > 255: //We do a dataset
+			if ipfixset.AssociatedTemplates == nil {
+				return fmt.Errorf("Must have associated templates to unmarshal set with ID %d", ipfixset.SetID)
+			}
+			tmprec := &DataRecord{}
+			tmprec.AssociateTemplates(ipfixset.AssociatedTemplates)
+			err := tmprec.UnmarshalBinary(data[cursor:])
+			if err != nil {
+				return err
+			}
+			cursor += tmprec.Len()
+			ipfixset.AddRecord(tmprec)
+		default: //Invalid Template ID
+			return fmt.Errorf("Invalid template ID: %d", ipfixset.SetID)
 
 		}
-			totalFieldCount := binary.BigEndian.Uint16(data[2:4])
-			scopeFieldCount := uint16(0)
-			cursor := uint16(4)
-			if tmplrec.ScopeFieldSpecifiers != nil {
-				scopeFieldCount = binary.BigEndian.Uint16(data[4:6])
-				cursor = 6
-			}
-
-			for cnt := uint16(0); cnt < scopeFieldCount; cnt++ {
-				scopeField := &FieldSpecifier{}
-				if (data[cursor] & 128) != 0 {
-					scopeField.UnmarshalBinary(data[cursor : cursor+8])
-					cursor += uint16(8)
-				} else {
-					scopeField.UnmarshalBinary(data[cursor : cursor+4])
-					cursor += uint16(4)
-				}
-				tmplrec.ScopeFieldSpecifiers = append(tmplrec.ScopeFieldSpecifiers, scopeField)
-			}
-			for cnt := uint16(0); cnt < (totalFieldCount - scopeFieldCount); cnt++ {
-				fieldSpecifier := &FieldSpecifier{}
-				if (data[cursor] & 128) != 0 {
-					fieldSpecifier.UnmarshalBinary(data[cursor : cursor+8])
-					cursor += uint16(8)
-				} else {
-					fieldSpecifier.UnmarshalBinary(data[cursor : cursor+4])
-					cursor += uint16(4)
-				}
-				tmplrec.FieldSpecifiers = append(tmplrec.FieldSpecifiers, fieldSpecifier)
-			}*/
+	}
 	return nil
 }
