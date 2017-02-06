@@ -102,7 +102,6 @@ func TestSetWithTemplateRecord(t *testing.T) {
 
 	umtestset := NewBlankSet()
 	err = umtestset.UnmarshalBinary(expectedmarshalresult)
-	fmt.Println(err, "aaaa")
 	umtestset.Pad(8) //Can not implicitly determine padding boundary
 
 	if fmt.Sprintf("%s", umtestset) != fmt.Sprintf("%s", testset) {

@@ -157,9 +157,8 @@ func (ipfixset *Set) UnmarshalBinary(data []byte) error {
 		//All other values from 4 to 255 are reserved for future use. Values above 255 are used for Data Sets.
 		switch {
 		case ipfixset.SetID == 2, ipfixset.SetID == 3: //We do the template or option template set
-			if (cursor + 4) >= datalength { //There are no following fields after the template header
-				cursor += 4
-				break
+			if (cursor + 4) >= datalength { //There are no following fields after the template header, so must be padding
+				return nil
 			}
 			tmprec := &TemplateRecord{}
 			err := tmprec.UnmarshalBinary(data[cursor:])
