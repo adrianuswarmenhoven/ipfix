@@ -208,6 +208,33 @@ func TestSetWithOptionsTemplateRecord(t *testing.T) {
 
 }
 
+func TestSetWithDataRecord(t *testing.T) {
+	if ipfixset_test_print {
+		fmt.Println("--- DATA RECORD SET ---")
+	}
+	testset, err := NewSet(257)
+	if err != nil {
+		t.Fatalf("New IPFIX Set creation failed: %#v", err)
+	}
+
+	tr, err := NewTemplateRecord(257)
+	if err != nil {
+		t.Errorf(errorPrefixMarker+"Error creating new template: %#v", err)
+	}
+
+	newfsp, err := NewFieldSpecifier(123, 258, 8)
+	if err != nil {
+		t.Fatalf("New Field Specifier creation failed: %#v", err)
+	}
+	tr.AddSpecifier(newfsp)
+
+	tmpat := NewActiveTemplateList()
+	tmpat.Set(257, tr)
+
+	testset.AssociateTemplates(tmpat)
+
+}
+
 func init() {
 	if false {
 		fmt.Println("ok")
