@@ -93,6 +93,29 @@ func (ipfixset *Set) AddRecord(rec Record) error {
 	if int(rec.Len())+int(ipfixset.Len()) > 65535 {
 		return fmt.Errorf("Can not add record. Record size %d + Set Size %d > 65535", rec.Len(), ipfixset.Len())
 	}
+	switch rec.(type) {
+	case *TemplateRecord:
+		switch ipfixset.SetID {
+		case SetIDTemplate:
+			if rec.(*TemplateRecord).ScopeFieldSpecifiers != nil {
+				return fmt.Errorf("Can not add Option Template Record to Template Set")
+			}
+
+		case SetIDOptionTemplate:
+			if rec.(*TemplateRecord).ScopeFieldSpecifiers == nil {
+				return fmt.Errorf("Can not add Template Record to Scope Field Set")
+			}
+		default:
+			return fmt.Errorf("Can not add Template Record to Data Set")
+		}
+	case *DataRecord:
+		switch ipfixset.SetID {
+		case SetIDTemplate, SetIDOptionTemplate:
+			if rec.(*TemplateRecord).ScopeFieldSpecifiers == nil {
+				return fmt.Errorf("Can not add Data Record to (Scope) Field Set")
+			}
+		}
+	}
 	ipfixset.Records = append(ipfixset.Records, &rec)
 	return nil
 }
@@ -156,11 +179,14 @@ func (ipfixset *Set) UnmarshalBinary(data []byte) error {
 		//Set ID value identifies the Set.  A value of 2 is reserved for the Template Set.  A value of 3 is reserved for the Option Template Set.
 		//All other values from 4 to 255 are reserved for future use. Values above 255 are used for Data Sets.
 		switch {
-		case ipfixset.SetID == 2, ipfixset.SetID == 3: //We do the template or option template set
+		case ipfixset.SetID == SetIDTemplate, ipfixset.SetID == SetIDOptionTemplate: //We do the template or option template set
 			if (cursor + 4) >= datalength { //There are no following fields after the template header, so must be padding
 				return nil
 			}
 			tmprec := &TemplateRecord{}
+			if ipfixset.SetID == SetIDOptionTemplate {
+				tmprec.ScopeFieldSpecifiers = make([]*FieldSpecifier, 0, 0)
+			}
 			err := tmprec.UnmarshalBinary(data[cursor:])
 			if err != nil {
 				return err
