@@ -20,6 +20,35 @@ type DataRecord struct {
 	FieldValues []FieldValue //Note that Field Values do not necessarily have a length of 16 bits. Field Values are encoded according to their data type specified in [RFC5102].
 }
 
+// NewDataRecord returns a pointer to a newly created datarecord
+func NewDataRecord(templateid uint16, associatedtemplates *ActiveTemplates) (*DataRecord, error) {
+	if associatedtemplates != nil && templateid < 256 {
+		return nil, fmt.Errorf("Template id %d not valid. Must be > 255", templateid)
+	}
+	return &DataRecord{
+		TemplateID:          templateid,
+		AssociatedTemplates: associatedtemplates,
+		FieldValues:         make([]FieldValue, 0, 0),
+	}, nil
+}
+
+//AddFieldValue adds a fieldvalue to the record. If a template is set it will be checked.
+func (datrec *DataRecord) AddFieldValue(fieldvalue FieldValue) error {
+	if datrec.AssociatedTemplates == nil {
+		datrec.FieldValues = append(datrec.FieldValues, fieldvalue)
+		return nil
+	}
+	if len(datrec.FieldValues) >= (len(datrec.AssociatedTemplates.Template[datrec.TemplateID].Record.FieldSpecifiers) + len(datrec.AssociatedTemplates.Template[datrec.TemplateID].Record.ScopeFieldSpecifiers)) {
+		return fmt.Errorf("Too many field values in record. Should only have %d", (len(datrec.AssociatedTemplates.Template[datrec.TemplateID].Record.FieldSpecifiers) + len(datrec.AssociatedTemplates.Template[datrec.TemplateID].Record.ScopeFieldSpecifiers)))
+	}
+	if datrec.AssociatedTemplates.Template[datrec.TemplateID].Record.FieldSpecifiers[len(datrec.FieldValues)].FieldLength != fieldvalue.Len() &&
+		datrec.AssociatedTemplates.Template[datrec.TemplateID].Record.FieldSpecifiers[len(datrec.FieldValues)].FieldLength != VariableLength {
+		return fmt.Errorf("Field value has incorrect octet length. Expected %d, but got %d", datrec.AssociatedTemplates.Template[datrec.TemplateID].Record.FieldSpecifiers[len(datrec.FieldValues)].FieldLength, fieldvalue.Len())
+	}
+	datrec.FieldValues = append(datrec.FieldValues, fieldvalue)
+	return nil
+}
+
 // Len returns the size in octets of the DataRecord
 func (datrec *DataRecord) Len() uint16 {
 	reclen := uint16(0)
@@ -142,7 +171,7 @@ func (datrec *DataRecord) UnmarshalBinary(data []byte) error {
 		return fmt.Errorf("Can not marshal without associated templates")
 	}
 	if datrec.TemplateID < 256 {
-		return fmt.Errorf("Can not marshal without a template id")
+		return fmt.Errorf("Can not unmarshal without a template id")
 	}
 	if data == nil || len(data) == 0 {
 		return fmt.Errorf("Can not unmarshal, invalid data. %#v", data)

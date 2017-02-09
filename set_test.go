@@ -222,17 +222,77 @@ func TestSetWithDataRecord(t *testing.T) {
 		t.Errorf(errorPrefixMarker+"Error creating new template: %#v", err)
 	}
 
-	newfsp, err := NewFieldSpecifier(123, 258, 8)
+	newfsp, err := NewFieldSpecifier(0, 84, VariableLength) //Add a single 64-bit field
 	if err != nil {
 		t.Fatalf("New Field Specifier creation failed: %#v", err)
 	}
 	tr.AddSpecifier(newfsp)
+
+	newfsp2, err := NewFieldSpecifier(0, 85, 8) //Add a single 64-bit field
+	if err != nil {
+		t.Fatalf("New Field Specifier creation failed: %#v", err)
+	}
+	tr.AddSpecifier(newfsp2)
 
 	tmpat := NewActiveTemplateList()
 	tmpat.Set(257, tr)
 
 	testset.AssociateTemplates(tmpat)
 
+	dr, err := NewDataRecord(257, testset.AssociatedTemplates)
+	if err != nil {
+		t.Fatalf("New Data record creation failed: %#v", err)
+	}
+	err = dr.AddFieldValue(&FieldValueString{value: "test string samp"})
+	if err != nil {
+		t.Fatalf("Addition of string failed: %#v", err)
+	}
+	err = dr.AddFieldValue(&FieldValueString{value: "test string"})
+	if err == nil {
+		t.Fatalf("Addition of string should have failed but error is %#v", err)
+	}
+	err = dr.AddFieldValue(&FieldValueUnsigned64{value: 0x0807060504030201})
+	if err != nil {
+		t.Fatalf("Addition of 64-bit unsigned integer failed: %#v", err)
+	}
+	err = dr.AddFieldValue(&FieldValueUnsigned64{value: 0x0807060504030201})
+	if err == nil {
+		t.Fatalf("Addition of 64-bit unsigned integer should have failed but error is %#v", err)
+	}
+
+	err = testset.AddRecord(dr)
+	if err != nil {
+		t.Fatalf("Additon of data record to test set failed: %#v", err)
+	}
+
+	testset.Pad(7)
+	if ipfixset_test_print {
+		fmt.Println(testset, testset.Len())
+	}
+
+	data, err := testset.MarshalBinary()
+	if err != nil {
+		t.Fatalf("Marshalling set failed: %#v", err)
+	}
+	if ipfixset_test_print {
+		fmt.Println(data)
+	}
+
+	umtestset := NewBlankSet()
+	umtestset.AssociateTemplates(tmpat) //Must associate templates
+	err = umtestset.UnmarshalBinary(data)
+	if err != nil {
+		t.Fatalf("Unmarshalling set failed: %#v", err)
+	}
+	umtestset.Pad(7) //Can not implicitly determine padding boundary
+
+	if ipfixset_test_print {
+		fmt.Println(umtestset, err)
+	}
+
+	if fmt.Sprintf("%s", umtestset) != fmt.Sprintf("%s", testset) {
+		t.Fatalf("Expected: \n%s\nbut got:\n%s", testset, umtestset)
+	}
 }
 
 func init() {

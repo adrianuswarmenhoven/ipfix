@@ -43,7 +43,7 @@ func TestDataRecordBasic(t *testing.T) {
 	if err != nil {
 		t.Errorf(errorPrefixMarker+"Error creating new template: %#v", err)
 	}
-	dr := &DataRecord{}
+	dr, _ := NewDataRecord(257, nil)
 	_, err = dr.MarshalBinary()
 	if err == nil {
 		t.Errorf(errorPrefixMarker + "Should have gotten error for trying to marshal without template")

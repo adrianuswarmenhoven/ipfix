@@ -172,17 +172,31 @@ func (ipfixset *Set) UnmarshalBinary(data []byte) error {
 	}
 
 	ipfixset.SetID = binary.BigEndian.Uint16(data[0:2])
+	minrecordlength := uint16(0)
+	if ipfixset.SetID > 255 {
+		if ipfixset.AssociatedTemplates == nil {
+			return fmt.Errorf("Must have associated templates to unmarshal set with ID %d", ipfixset.SetID)
+		}
+		for _, fsp := range ipfixset.AssociatedTemplates.Template[ipfixset.SetID].Record.FieldSpecifiers {
+			if fsp.Len() != VariableLength {
+				minrecordlength += fsp.Len()
+			} else {
+				minrecordlength += 2 //one byte for length, one for value
+			}
+		}
+	} else {
+		minrecordlength = 4 //template header
+	}
 	datalength := binary.BigEndian.Uint16(data[2:4])
 	cursor := uint16(4)
 
 	for cursor < datalength { //We always need at least 4 bytes to determine Template ID and Field Count
-		//Set ID value identifies the Set.  A value of 2 is reserved for the Template Set.  A value of 3 is reserved for the Option Template Set.
+		if (cursor + minrecordlength) >= datalength { //Must be padding
+			return nil
+		} //Set ID value identifies the Set.  A value of 2 is reserved for the Template Set.  A value of 3 is reserved for the Option Template Set.
 		//All other values from 4 to 255 are reserved for future use. Values above 255 are used for Data Sets.
 		switch {
 		case ipfixset.SetID == SetIDTemplate, ipfixset.SetID == SetIDOptionTemplate: //We do the template or option template set
-			if (cursor + 4) >= datalength { //There are no following fields after the template header, so must be padding
-				return nil
-			}
 			tmprec := &TemplateRecord{}
 			if ipfixset.SetID == SetIDOptionTemplate {
 				tmprec.ScopeFieldSpecifiers = make([]*FieldSpecifier, 0, 0)
@@ -194,12 +208,11 @@ func (ipfixset *Set) UnmarshalBinary(data []byte) error {
 			cursor += tmprec.Len()
 			ipfixset.AddRecord(tmprec)
 		case ipfixset.SetID > 255: //We do a dataset
-			if ipfixset.AssociatedTemplates == nil {
-				return fmt.Errorf("Must have associated templates to unmarshal set with ID %d", ipfixset.SetID)
+			tmprec, err := NewDataRecord(ipfixset.SetID, ipfixset.AssociatedTemplates)
+			if err != nil {
+				return err
 			}
-			tmprec := &DataRecord{}
-			tmprec.AssociateTemplates(ipfixset.AssociatedTemplates)
-			err := tmprec.UnmarshalBinary(data[cursor:])
+			err = tmprec.UnmarshalBinary(data[cursor:])
 			if err != nil {
 				return err
 			}
