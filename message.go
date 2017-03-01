@@ -1,6 +1,8 @@
 package ipfixmessage
 
 import (
+	"bytes"
+	"encoding/binary"
 	"fmt"
 	"time"
 )
@@ -90,7 +92,52 @@ func (ipfixmsg *Message) AddSet(newset *Set) *Message {
 
 // MarshalBinary satisfies the encoding/BinaryMarshaler interface
 func (ipfixmsg *Message) MarshalBinary() (data []byte, err error) {
-	return nil, fmt.Errorf("Not yet implemented!")
+	//Set ID value identifies the Set.  A value of 2 is reserved for the Template Set.  A value of 3 is reserved for the Option Template Set.
+	//All other values from 4 to 255 are reserved for future use. Values above 255 are used for Data Sets.
+	if ipfixmsg.VersionNumber < IPFIXVersion {
+		return nil, fmt.Errorf("Invalid IPFIX Version Number: %d", ipfixmsg.VersionNumber)
+	}
+	buf := new(bytes.Buffer) //should get from pool?
+
+	err = binary.Write(buf, binary.BigEndian, uint16(IPFIXVersion))
+	if err != nil {
+		return nil, err
+	}
+
+	totalsetlength := uint16(0) //FIXME
+	for _, set := range ipfixmsg.Sets {
+		totalsetlength += set.Len()
+	}
+	err = binary.Write(buf, binary.BigEndian, 16+totalsetlength)
+	if err != nil {
+		return nil, err
+	}
+
+	err = binary.Write(buf, binary.BigEndian, uint32(ipfixmsg.ExportTime.Unix()))
+	if err != nil {
+		return nil, err
+	}
+
+	err = binary.Write(buf, binary.BigEndian, uint32(ipfixmsg.SequenceNumber))
+	if err != nil {
+		return nil, err
+	}
+
+	err = binary.Write(buf, binary.BigEndian, uint32(ipfixmsg.ObservationDomainID))
+	if err != nil {
+		return nil, err
+	}
+
+	data = buf.Bytes()
+	for _, set := range ipfixmsg.Sets {
+		setdat, err := (*set).MarshalBinary()
+		if err != nil {
+			return nil, err
+		}
+		data = append(data, setdat...)
+	}
+
+	return data, nil
 }
 
 // UnmarshalBinary satisfies the encoding/BinaryUnmarshaler interface
