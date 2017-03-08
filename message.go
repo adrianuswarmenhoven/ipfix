@@ -155,10 +155,12 @@ func (ipfixmsg *Message) UnmarshalBinary(data []byte) error {
 
 	ipfixmsg.ObservationDomainID = binary.BigEndian.Uint32(data[12:16])
 
-	if totalsetlength > 16 {
+	cursor := uint16(16)
+	if cursor < totalsetlength {
 		tmpset := NewBlankSet()
-		tmpset.UnmarshalBinary(data[16:])
+		tmpset.UnmarshalBinary(data[cursor:])
 		ipfixmsg.Sets = append(ipfixmsg.Sets, tmpset)
+		cursor += tmpset.Len()
 	}
 
 	return nil
