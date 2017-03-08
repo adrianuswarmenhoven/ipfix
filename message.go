@@ -104,15 +104,14 @@ func (ipfixmsg *Message) MarshalBinary() (data []byte, err error) {
 		return nil, err
 	}
 
-	totalsetlength := uint16(0) //FIXME
+	totalsetlength := uint16(16) //FIXME
 	for _, set := range ipfixmsg.Sets {
 		totalsetlength += set.Len()
 	}
-	err = binary.Write(buf, binary.BigEndian, 16+totalsetlength)
+	err = binary.Write(buf, binary.BigEndian, totalsetlength)
 	if err != nil {
 		return nil, err
 	}
-
 	err = binary.Write(buf, binary.BigEndian, uint32(ipfixmsg.ExportTime.Unix()))
 	if err != nil {
 		return nil, err
@@ -142,9 +141,23 @@ func (ipfixmsg *Message) MarshalBinary() (data []byte, err error) {
 
 // UnmarshalBinary satisfies the encoding/BinaryUnmarshaler interface
 func (ipfixmsg *Message) UnmarshalBinary(data []byte) error {
-	if data == nil || len(data) == 0 {
+	if data == nil || len(data) < 16 {
 		return fmt.Errorf("Can not unmarshal, invalid data. %#v", data)
 	}
 
-	return fmt.Errorf("Not yet implemented!")
+	ipfixmsg.VersionNumber = binary.BigEndian.Uint16(data[0:2])
+
+	totalsetlength := binary.BigEndian.Uint16(data[2:4])
+
+	ipfixmsg.ExportTime = time.Unix(int64(binary.BigEndian.Uint32(data[4:8])), 0)
+
+	ipfixmsg.SequenceNumber = binary.BigEndian.Uint32(data[8:12])
+
+	ipfixmsg.ObservationDomainID = binary.BigEndian.Uint32(data[12:16])
+
+	if totalsetlength > 16 {
+		fmt.Println("Need more work")
+	}
+
+	return nil
 }
