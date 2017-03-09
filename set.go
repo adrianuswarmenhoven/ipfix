@@ -177,7 +177,11 @@ func (ipfixset *Set) UnmarshalBinary(data []byte) error {
 		if ipfixset.AssociatedTemplates == nil {
 			return fmt.Errorf("Must have associated templates to unmarshal set with ID %d", ipfixset.SetID)
 		}
-		for _, fsp := range ipfixset.AssociatedTemplates.Template[ipfixset.SetID].Record.FieldSpecifiers {
+		ipfixsetTemplate, err := ipfixset.AssociatedTemplates.Get(ipfixset.SetID)
+		if err != nil {
+			return err
+		}
+		for _, fsp := range ipfixsetTemplate.FieldSpecifiers {
 			if fsp.Len() != VariableLength {
 				minrecordlength += fsp.Len()
 			} else {

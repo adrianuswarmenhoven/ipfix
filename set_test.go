@@ -222,7 +222,7 @@ func TestSetWithDataRecord(t *testing.T) {
 		t.Errorf(errorPrefixMarker+"Error creating new template: %#v", err)
 	}
 
-	newfsp, err := NewFieldSpecifier(0, 84, VariableLength) //Add a single 64-bit field
+	newfsp, err := NewFieldSpecifier(0, 84, VariableLength) //Add a string
 	if err != nil {
 		t.Fatalf("New Field Specifier creation failed: %#v", err)
 	}

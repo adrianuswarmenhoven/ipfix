@@ -9,7 +9,7 @@ import (
 // ActiveTemplates is a list of currently active templates.
 // These can be used in a session or when testing the marshalling/unmarshalling of the complex types
 type ActiveTemplates struct {
-	Template map[uint16]*ActiveTemplate
+	Template map[uint16]*ActiveTemplate //Using a map here instead of an array for memory reasons (512K per session might be excessive otherwise)
 
 	sync.Mutex
 }
@@ -71,7 +71,7 @@ func (at *ActiveTemplates) Set(id uint16, tpl *TemplateRecord) error {
 //Get returns the template record for the id or an error if not found
 func (at *ActiveTemplates) Get(id uint16) (*TemplateRecord, error) {
 	if at == nil {
-		return nil, fmt.Errorf("WTF")
+		return nil, fmt.Errorf("No active templates available")
 	}
 	at.Lock()
 	defer at.Unlock()

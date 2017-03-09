@@ -28,6 +28,9 @@ type Message struct {
 	SequenceNumber      uint32    // Incremental sequence counter modulo 2^32 of all IPFIX Data Records sent on this PR-SCTP stream from the current Observation Domain by the Exporting Process.
 	ObservationDomainID uint32    // A 32-bit identifier of the Observation Domain that is locally unique to the Exporting Process.
 	Sets                []*Set
+
+	//AssociatedTemplates Templates points to the list of active templates (whether in a session or not). Without a template record a data record can not be encoded or decoded
+	AssociatedTemplates *ActiveTemplates
 }
 
 // NewMessage creates a new IPFIX message.
@@ -144,10 +147,16 @@ func (ipfixmsg *Message) UnmarshalBinary(data []byte) error {
 	if data == nil || len(data) < 16 {
 		return fmt.Errorf("Can not unmarshal, invalid data. %#v", data)
 	}
+	if ipfixmsg.AssociatedTemplates == nil {
+		return fmt.Errorf("Can not have nil pointer to associated templates")
+	}
 
 	ipfixmsg.VersionNumber = binary.BigEndian.Uint16(data[0:2])
 
-	totalsetlength := binary.BigEndian.Uint16(data[2:4])
+	totalmessagelength := binary.BigEndian.Uint16(data[2:4])
+	if int(totalmessagelength) > len(data) {
+		return fmt.Errorf("Can not unmarshal, invalid length. Message states %d but only have %d bytes of data", totalmessagelength, len(data))
+	}
 
 	ipfixmsg.ExportTime = time.Unix(int64(binary.BigEndian.Uint32(data[4:8])), 0)
 
@@ -156,12 +165,28 @@ func (ipfixmsg *Message) UnmarshalBinary(data []byte) error {
 	ipfixmsg.ObservationDomainID = binary.BigEndian.Uint32(data[12:16])
 
 	cursor := uint16(16)
-	if cursor < totalsetlength {
+	for cursor < totalmessagelength {
 		tmpset := NewBlankSet()
-		tmpset.UnmarshalBinary(data[cursor:])
+		tmpset.AssociateTemplates(ipfixmsg.AssociatedTemplates)
+		err := tmpset.UnmarshalBinary(data[cursor:])
+		if err != nil {
+			return err
+		}
+		if tmpset.SetID == 2 { //Need to add/update all the messages
+			for _, rec := range tmpset.Records {
+				switch (*rec).(type) {
+				case *TemplateRecord:
+					err := ipfixmsg.AssociatedTemplates.Set((*rec).(*TemplateRecord).TemplateID, (*rec).(*TemplateRecord))
+					if err != nil {
+						return err
+					}
+				case *DataRecord:
+					return fmt.Errorf("Datarecord in template set")
+				}
+			}
+		}
 		ipfixmsg.Sets = append(ipfixmsg.Sets, tmpset)
 		cursor += tmpset.Len()
 	}
-
 	return nil
 }
