@@ -23,7 +23,7 @@ type DataRecord struct {
 // NewDataRecord returns a pointer to a newly created datarecord
 func NewDataRecord(templateid uint16, associatedtemplates *ActiveTemplates) (*DataRecord, error) {
 	if associatedtemplates != nil && templateid < 256 {
-		return nil, fmt.Errorf("Template id %d not valid. Must be > 255", templateid)
+		return nil, NewError(fmt.Sprintf("Template id %d not valid. Must be > 255", templateid), ErrCritical)
 	}
 	return &DataRecord{
 		TemplateID:          templateid,
@@ -39,11 +39,11 @@ func (datrec *DataRecord) AddFieldValue(fieldvalue FieldValue) error {
 		return nil
 	}
 	if len(datrec.FieldValues) >= (len(datrec.AssociatedTemplates.Template[datrec.TemplateID].Record.FieldSpecifiers) + len(datrec.AssociatedTemplates.Template[datrec.TemplateID].Record.ScopeFieldSpecifiers)) {
-		return fmt.Errorf("Too many field values in record. Should only have %d", (len(datrec.AssociatedTemplates.Template[datrec.TemplateID].Record.FieldSpecifiers) + len(datrec.AssociatedTemplates.Template[datrec.TemplateID].Record.ScopeFieldSpecifiers)))
+		return NewError(fmt.Sprintf("Too many field values in record. Should only have %d", (len(datrec.AssociatedTemplates.Template[datrec.TemplateID].Record.FieldSpecifiers)+len(datrec.AssociatedTemplates.Template[datrec.TemplateID].Record.ScopeFieldSpecifiers))), ErrCritical)
 	}
 	if datrec.AssociatedTemplates.Template[datrec.TemplateID].Record.FieldSpecifiers[len(datrec.FieldValues)].FieldLength != fieldvalue.Len() &&
 		datrec.AssociatedTemplates.Template[datrec.TemplateID].Record.FieldSpecifiers[len(datrec.FieldValues)].FieldLength != VariableLength {
-		return fmt.Errorf("Field value has incorrect octet length. Expected %d, but got %d", datrec.AssociatedTemplates.Template[datrec.TemplateID].Record.FieldSpecifiers[len(datrec.FieldValues)].FieldLength, fieldvalue.Len())
+		return NewError(fmt.Sprintf("Field value has incorrect octet length. Expected %d, but got %d", datrec.AssociatedTemplates.Template[datrec.TemplateID].Record.FieldSpecifiers[len(datrec.FieldValues)].FieldLength, fieldvalue.Len()), ErrCritical)
 	}
 	datrec.FieldValues = append(datrec.FieldValues, fieldvalue)
 	return nil
@@ -84,7 +84,7 @@ func (datrec *DataRecord) Len() uint16 {
 // AssociateTemplates sets the template to be used marshalling/unmarshalling this DataRecord
 func (datrec *DataRecord) AssociateTemplates(at *ActiveTemplates) error {
 	if at == nil {
-		return fmt.Errorf("Can not use nil as Template List")
+		return NewError("Can not use nil as Template List", ErrCritical)
 	}
 	datrec.AssociatedTemplates = at
 	return nil
@@ -102,7 +102,7 @@ func (datrec *DataRecord) String() string {
 // SetTemplateID sets the template ID the current DataRecord adheres to.
 func (datrec *DataRecord) SetTemplateID(id uint16) error {
 	if id < 256 {
-		return fmt.Errorf("Can not use a template id < 256. Was %d", id)
+		return NewError(fmt.Sprintf("Can not use a template id < 256. Was %d", id), ErrCritical)
 	}
 	datrec.TemplateID = id
 	return nil
@@ -112,18 +112,18 @@ func (datrec *DataRecord) SetTemplateID(id uint16) error {
 // FieldValues have a type when added so there is implicit information on each field value to marshal it
 func (datrec *DataRecord) MarshalBinary() (data []byte, err error) {
 	if datrec.AssociatedTemplates == nil {
-		return nil, fmt.Errorf("Can not marshal without associated templates")
+		return nil, NewError("Can not marshal without associated templates", ErrCritical)
 	}
 	if datrec.TemplateID < 256 {
-		return nil, fmt.Errorf("Can not marshal without a template id")
+		return nil, NewError("Can not marshal without a template id", ErrCritical)
 	}
 	if len(datrec.FieldValues) < 1 {
-		return nil, fmt.Errorf("Can not marshal record, must have at least one Field Value")
+		return nil, NewError("Can not marshal record, must have at least one Field Value", ErrCritical)
 	}
 	marshalValue := []byte{}
 	curtemplate, err := datrec.AssociatedTemplates.Get(datrec.TemplateID)
 	if err != nil {
-		return nil, fmt.Errorf("Can not marshal record, error in retrieving template %#v", err)
+		return nil, NewError(fmt.Sprintf("Can not marshal record, error in retrieving template %#v", err), ErrCritical)
 	}
 	NofScopeFields := len(curtemplate.ScopeFieldSpecifiers)
 	for fieldidx, listitem := range datrec.FieldValues {
@@ -135,6 +135,7 @@ func (datrec *DataRecord) MarshalBinary() (data []byte, err error) {
 			listitem.(*FieldValueSubTemplateMultiList).SetAssiocatedTemplates(datrec.AssociatedTemplates)
 		}
 		item, err = listitem.MarshalBinary()
+FIXME: USE NEW ERROR STACKING
 		if err != nil {
 			return nil, err
 		}
