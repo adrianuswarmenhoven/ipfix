@@ -34,7 +34,7 @@ Because Template Sets are always 4-octet aligned by definition, padding is only 
 // NewSet creates a new IPFIX Set with specified set ID
 func NewSet(setid uint16) (*Set, error) {
 	if setid < SetIDTemplate || (setid > SetIDOptionTemplate && setid < 256) {
-		return nil, fmt.Errorf("Invalid value for Set ID: %d", setid)
+		return nil, NewError(fmt.Sprintf("Invalid value for Set ID: %d", setid), ErrCritical)
 	}
 
 	return &Set{
@@ -56,7 +56,7 @@ func NewBlankSet() *Set {
 // AssociateTemplates sets the template to be used marshalling/unmarshalling this DataRecord
 func (ipfixset *Set) AssociateTemplates(at *ActiveTemplates) error {
 	if at == nil {
-		return fmt.Errorf("Can not use nil as Template List")
+		return NewError("Can not use nil as Template List", ErrCritical)
 	}
 	ipfixset.AssociatedTemplates = at
 	return nil
@@ -91,28 +91,28 @@ func (ipfixset *Set) String() string {
 // AddRecord adds a new record to this set
 func (ipfixset *Set) AddRecord(rec Record) error {
 	if int(rec.Len())+int(ipfixset.Len()) > 65535 {
-		return fmt.Errorf("Can not add record. Record size %d + Set Size %d > 65535", rec.Len(), ipfixset.Len())
+		return NewError(fmt.Sprintf("Can not add record. Record size %d + Set Size %d > 65535", rec.Len(), ipfixset.Len()), ErrCritical)
 	}
 	switch rec.(type) {
 	case *TemplateRecord:
 		switch ipfixset.SetID {
 		case SetIDTemplate:
 			if rec.(*TemplateRecord).ScopeFieldSpecifiers != nil {
-				return fmt.Errorf("Can not add Option Template Record to Template Set")
+				return NewError("Can not add Option Template Record to Template Set", ErrCritical)
 			}
 
 		case SetIDOptionTemplate:
 			if rec.(*TemplateRecord).ScopeFieldSpecifiers == nil {
-				return fmt.Errorf("Can not add Template Record to Scope Field Set")
+				return NewError("Can not add Template Record to Scope Field Set", ErrCritical)
 			}
 		default:
-			return fmt.Errorf("Can not add Template Record to Data Set")
+			return NewError("Can not add Template Record to Data Set", ErrCritical)
 		}
 	case *DataRecord:
 		switch ipfixset.SetID {
 		case SetIDTemplate, SetIDOptionTemplate:
 			if rec.(*TemplateRecord).ScopeFieldSpecifiers == nil {
-				return fmt.Errorf("Can not add Data Record to (Scope) Field Set")
+				return NewError("Can not add Data Record to (Scope) Field Set", ErrCritical)
 			}
 		}
 	}
@@ -132,7 +132,7 @@ func (ipfixset *Set) MarshalBinary() (data []byte, err error) {
 	//Set ID value identifies the Set.  A value of 2 is reserved for the Template Set.  A value of 3 is reserved for the Option Template Set.
 	//All other values from 4 to 255 are reserved for future use. Values above 255 are used for Data Sets.
 	if ipfixset.SetID > 3 && ipfixset.SetID < 256 && ipfixset.AssociatedTemplates == nil {
-		return nil, fmt.Errorf("Need associated templates for Set ID %d", ipfixset.SetID)
+		return nil, NewError(fmt.Sprintf("Need associated templates for Set ID %d", ipfixset.SetID), ErrCritical)
 	}
 	buf := new(bytes.Buffer) //should get from pool?
 
@@ -172,30 +172,32 @@ func (ipfixset *Set) UnmarshalBinary(data []byte) error {
 	}
 
 	ipfixset.SetID = binary.BigEndian.Uint16(data[0:2])
-	minrecordlength := uint16(0)
+	recordlength := uint16(0)
+	hasvar := false
 	if ipfixset.SetID > 255 {
 		if ipfixset.AssociatedTemplates == nil {
-			return fmt.Errorf("Must have associated templates to unmarshal set with ID %d", ipfixset.SetID)
+			return NewError(fmt.Sprintf("Must have associated templates to unmarshal set with ID %d", ipfixset.SetID), ErrCritical)
 		}
 		ipfixsetTemplate, err := ipfixset.AssociatedTemplates.Get(ipfixset.SetID)
 		if err != nil {
 			return err
 		}
 		for _, fsp := range ipfixsetTemplate.FieldSpecifiers {
-			if fsp.Len() != VariableLength {
-				minrecordlength += fsp.Len()
+			if fsp.FieldLength != VariableLength {
+				recordlength += fsp.FieldLength
 			} else {
-				minrecordlength += 2 //one byte for length, one for value
+				hasvar = true
+				recordlength += 2 //one byte for length, one for value
 			}
 		}
 	} else {
-		minrecordlength = 4 //template header
+		recordlength = 4 //template header
 	}
 	datalength := binary.BigEndian.Uint16(data[2:4])
 	cursor := uint16(4)
 
 	for cursor < datalength { //We always need at least 4 bytes to determine Template ID and Field Count
-		if (cursor + minrecordlength) >= datalength { //Must be padding
+		if (cursor + recordlength) > datalength { //Must be padding
 			return nil
 		} //Set ID value identifies the Set.  A value of 2 is reserved for the Template Set.  A value of 3 is reserved for the Option Template Set.
 		//All other values from 4 to 255 are reserved for future use. Values above 255 are used for Data Sets.
@@ -220,11 +222,14 @@ func (ipfixset *Set) UnmarshalBinary(data []byte) error {
 			if err != nil {
 				return err
 			}
-			cursor += tmprec.Len()
+			if !hasvar {
+				cursor += recordlength
+			} else {
+				cursor += tmprec.Len()
+			}
 			ipfixset.AddRecord(tmprec)
 		default: //Invalid Template ID
-			return fmt.Errorf("Invalid template ID: %d", ipfixset.SetID)
-
+			return NewError(fmt.Sprintf("Invalid template ID: %d", ipfixset.SetID), ErrCritical)
 		}
 	}
 	return nil

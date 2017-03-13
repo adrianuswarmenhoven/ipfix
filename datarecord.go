@@ -134,10 +134,12 @@ func (datrec *DataRecord) MarshalBinary() (data []byte, err error) {
 		case *FieldValueSubTemplateMultiList:
 			listitem.(*FieldValueSubTemplateMultiList).SetAssiocatedTemplates(datrec.AssociatedTemplates)
 		}
-		item, err = listitem.MarshalBinary()
-FIXME: USE NEW ERROR STACKING
-		if err != nil {
-			return nil, err
+		item, suberr := listitem.MarshalBinary()
+		if suberr != nil {
+			if err == nil {
+				err = NewError("Sub errors marshalling data record.", ErrFailure)
+			}
+			err.(*ProtocolError).Stack(*suberr.(*ProtocolError))
 		}
 		FieldSpec := &FieldSpecifier{}
 		if NofScopeFields > 0 {
@@ -151,7 +153,7 @@ FIXME: USE NEW ERROR STACKING
 		}
 		if FieldSpec.FieldLength != VariableLength {
 			if len(item) != int(curtemplate.FieldSpecifiers[fieldidx].FieldLength) {
-				return nil, fmt.Errorf("Wrong marshalled size for item %#v, expected %d, but got %d", listitem, len(item), curtemplate.FieldSpecifiers[fieldidx].FieldLength)
+				return nil, NewError(fmt.Sprintf("Wrong marshalled size for item %#v, expected %d, but got %d", listitem, len(item), curtemplate.FieldSpecifiers[fieldidx].FieldLength), ErrCritical)
 			}
 		} else {
 			var marshalLength []byte
@@ -163,29 +165,43 @@ FIXME: USE NEW ERROR STACKING
 		}
 		marshalValue = append(marshalValue, item...)
 	}
-	return marshalValue, nil
+	return marshalValue, err
 }
 
 // UnmarshalBinary satisfies the encoding/BinaryUnmarshaler interface
 func (datrec *DataRecord) UnmarshalBinary(data []byte) error {
 	if datrec.AssociatedTemplates == nil {
-		return fmt.Errorf("Can not marshal without associated templates")
+		return NewError(fmt.Sprintf("Can not marshal without associated templates"), ErrCritical)
 	}
 	if datrec.TemplateID < 256 {
-		return fmt.Errorf("Can not unmarshal without a template id")
+		return NewError(fmt.Sprintf("Can not unmarshal; incorrect template id %d", datrec.TemplateID), ErrCritical)
 	}
 	if data == nil || len(data) == 0 {
-		return fmt.Errorf("Can not unmarshal, invalid data. %#v", data)
+		return NewError(fmt.Sprintf("Can not unmarshal, invalid data. %#v", data), ErrCritical)
 	}
 	curtemplate, err := datrec.AssociatedTemplates.Get(datrec.TemplateID)
 	if err != nil {
-		return fmt.Errorf("Can not marshal record, error in retrieving template %#v", err)
+		return NewError(fmt.Sprintf("Can not marshal record, error in retrieving template %#v", err), ErrCritical)
 	}
 	cursor := 0
+	cnt := 0
+	totallen := 0
+	minrecordlength := uint16(0)
+	for _, fsp := range curtemplate.FieldSpecifiers {
+		if fsp.Len() != VariableLength {
+			minrecordlength += fsp.Len()
+		} else {
+			minrecordlength += 2 //one byte for length, one for value
+		}
+	}
 	for _, recitem := range curtemplate.FieldSpecifiers {
-		newval, err := NewFieldValueByID(int(recitem.EnterpriseNumber), int(recitem.InformationElementIdentifier))
-		if err != nil {
-			return err
+		cnt++
+		newval, suberr := NewFieldValueByID(int(recitem.EnterpriseNumber), int(recitem.InformationElementIdentifier))
+		if suberr != nil {
+			if err == nil {
+				err = NewError("Sub errors unmarshalling data record.", ErrFailure)
+			}
+			err.(*ProtocolError).Stack(*suberr.(*ProtocolError))
 		}
 		switch newval.(type) {
 		case *FieldValueSubTemplateList:
@@ -195,24 +211,25 @@ func (datrec *DataRecord) UnmarshalBinary(data []byte) error {
 		}
 		if recitem.FieldLength != VariableLength {
 			if cursor+int(recitem.FieldLength) > len(data) {
-				return fmt.Errorf("Insufficient data to decode. Needed %d, but have %d", recitem.FieldLength, len(data[cursor:]))
+				return NewError(fmt.Sprintf("Insufficient data to decode. Needed %d, but have %d", recitem.FieldLength, len(data[cursor:])), ErrCritical)
 			}
 			err := newval.UnmarshalBinary(data[cursor : cursor+int(recitem.FieldLength)])
 			if err != nil {
 				return err
 			}
+			totallen += int(recitem.FieldLength)
 			datrec.FieldValues = append(datrec.FieldValues, newval)
 			cursor += int(recitem.FieldLength)
 		} else {
 			if cursor+3 > len(data) {
-				return fmt.Errorf("Insufficient data to decode. Needed %d, but have %d", 3, len(data[cursor:]))
+				return NewError(fmt.Sprintf("Insufficient data to decode. Needed %d, but have %d", 3, len(data[cursor:])), ErrCritical)
 			}
 			fieldlen, cursorshift, err := DecodeVariableLength(data[cursor : cursor+3])
 			if err != nil {
 				return err
 			}
 			if cursor+int(fieldlen)+int(cursorshift) > len(data) {
-				return fmt.Errorf("Insufficient data to decode. Needed %d, but have %d", int(fieldlen)+int(cursorshift), len(data[cursor:]))
+				return NewError(fmt.Sprintf("XInsufficient data to decode. Needed %d, but have %d", int(fieldlen)+int(cursorshift), len(data[cursor:])), ErrCritical)
 			}
 			cursor += int(cursorshift)
 			err = newval.UnmarshalBinary(data[cursor : cursor+int(fieldlen)])
@@ -223,5 +240,5 @@ func (datrec *DataRecord) UnmarshalBinary(data []byte) error {
 			cursor += int(fieldlen)
 		}
 	}
-	return nil
+	return err
 }

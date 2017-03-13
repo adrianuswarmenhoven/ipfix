@@ -3,3 +3,6 @@
 debug.*
 debug.test
 *.test
+bak
+tmp
+datasamples_test.go

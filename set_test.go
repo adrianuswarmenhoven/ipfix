@@ -103,7 +103,6 @@ func TestSetWithTemplateRecord(t *testing.T) {
 	}
 	if ipfixset_test_print {
 		fmt.Println(testset)
-		fmt.Println(testset.MarshalBinary())
 	}
 
 	umtestset := NewBlankSet()
@@ -195,7 +194,6 @@ func TestSetWithOptionsTemplateRecord(t *testing.T) {
 	}
 	if ipfixset_test_print {
 		fmt.Println(testset)
-		fmt.Println(testset.MarshalBinary())
 	}
 
 	umtestset := NewBlankSet()

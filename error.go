@@ -14,6 +14,7 @@ type ProtocolError struct {
 	SubError    []ProtocolError
 	Severity    int
 	Description string
+	MoreErrors  int
 }
 
 //Error implements the error interface
@@ -21,6 +22,9 @@ func (err *ProtocolError) Error() string {
 	ret := fmt.Sprintf("%d - %s ", err.Severity, err.Description)
 	for _, sube := range err.SubError {
 		ret += "{" + sube.Error() + "}"
+	}
+	if err.MoreErrors > 0 {
+		ret += fmt.Sprintf("{%d more errors}", err.MoreErrors)
 	}
 	return ret
 }
@@ -35,6 +39,17 @@ func NewError(desc string, sev int) *ProtocolError {
 }
 
 //Stack stacks an error on top of the current error
-func (err *ProtocolError) Stack(stackerr ProtocolError) {
-	err.SubError = append(err.SubError, stackerr)
+func (err *ProtocolError) Stack(stackerr interface{}) {
+	if len(err.SubError) > 4 {
+		err.MoreErrors++
+		return
+	}
+	switch stackerr.(type) {
+	case ProtocolError:
+		err.SubError = append(err.SubError, stackerr.(ProtocolError))
+	case *ProtocolError:
+		err.SubError = append(err.SubError, *(stackerr.(*ProtocolError)))
+	default:
+		err.SubError = append(err.SubError, *(NewError(fmt.Sprintf("%+v", err), ErrINFO)))
+	}
 }

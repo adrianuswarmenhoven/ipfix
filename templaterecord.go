@@ -198,28 +198,34 @@ func (tmplrec *TemplateRecord) UnmarshalBinary(data []byte) error {
 		scopeFieldCount = binary.BigEndian.Uint16(data[4:6])
 		cursor = 6
 	}
+	fmt.Println("FIELDS", totalFieldCount, scopeFieldCount)
 
 	for cnt := uint16(0); cnt < scopeFieldCount; cnt++ {
 		scopeField := &FieldSpecifier{}
 		if (data[cursor] & 128) != 0 {
-			scopeField.UnmarshalBinary(data[cursor : cursor+8])
+			fmt.Println("a", scopeField.UnmarshalBinary(data[cursor:cursor+8]))
 			cursor += uint16(8)
 		} else {
-			scopeField.UnmarshalBinary(data[cursor : cursor+4])
+			fmt.Println("b", scopeField.UnmarshalBinary(data[cursor:cursor+4]))
 			cursor += uint16(4)
 		}
+		fmt.Println("XX", scopeField)
 		tmplrec.ScopeFieldSpecifiers = append(tmplrec.ScopeFieldSpecifiers, scopeField)
 	}
+	fmt.Println("Rec", tmplrec)
+	fmt.Println(totalFieldCount)
 	for cnt := uint16(0); cnt < (totalFieldCount - scopeFieldCount); cnt++ {
 		fieldSpecifier := &FieldSpecifier{}
 		if (data[cursor] & 128) != 0 {
-			fieldSpecifier.UnmarshalBinary(data[cursor : cursor+8])
+			fmt.Println("c", fieldSpecifier.UnmarshalBinary(data[cursor:cursor+8]))
 			cursor += uint16(8)
 		} else {
-			fieldSpecifier.UnmarshalBinary(data[cursor : cursor+4])
+			fmt.Println("d", fieldSpecifier.UnmarshalBinary(data[cursor:cursor+4]))
 			cursor += uint16(4)
 		}
+		fmt.Println(fieldSpecifier)
 		tmplrec.FieldSpecifiers = append(tmplrec.FieldSpecifiers, fieldSpecifier)
 	}
+	fmt.Println(tmplrec)
 	return nil
 }

@@ -66,31 +66,49 @@ func (ipfixmsg *Message) Len() uint16 {
 }
 
 // SetODID sets the observation domain id on the message.
-func (ipfixmsg *Message) SetODID(odid uint32) *Message {
+// Observation Domain ID: A 32-bit identifier of the Observation Domain that is locally unique to the Exporting Process.
+// The Exporting Process uses the Observation Domain ID to uniquely identify to the Collecting Process the Observation Domain that metered the Flows.
+// It is RECOMMENDED that this identifier also be unique per IPFIX Device.
+// Collecting Processes SHOULD use the Transport Session and the Observation Domain ID field to separate different export streams originating from the same Exporter.
+// The Observation Domain ID SHOULD be 0 when no specific Observation Domain ID is relevant for the entire IPFIX Message, for example, when exporting the Exporting Process Statistics, or in the case of a hierarchy of Collectors when aggregated Data Records are exported.
+func (ipfixmsg *Message) SetObservationDomainID(odid uint32) error {
+	//Since the only rule is that the odid is 32 bits we always return nil for error.
+	//Although the text mentions 32-bit identifier, we enforce it as unsigned 32-bit integer
 	ipfixmsg.ObservationDomainID = odid
-
-	return ipfixmsg
+	return nil
 }
 
 // SetExportTime sets the export time on the message.
-func (ipfixmsg *Message) SetExportTime(exporttime time.Time) *Message {
-	ipfixmsg.ExportTime = exporttime
+// Export Time: Time at which the IPFIX Message Header leaves the Exporter, expressed in seconds since the UNIX epoch of 1 January 1970 at 00:00 UTC, encoded as an unsigned 32-bit integer.
+func (ipfixmsg *Message) SetExportTime(exporttime time.Time) error {
+	//Since an unsigned 32-bit integer can not be negative, we know for sure that we can not export any timestamps before UNIX epoch of 1 January 1970
+	if exporttime.Before(time.Unix(0, 0)) {
+		return NewError(fmt.Sprintf("Can not set export time to before UNIX epoch of 1 January 1970, but got %+v", exporttime), ErrCritical)
+	}
 
-	return ipfixmsg
+	ipfixmsg.ExportTime = exporttime
+	return nil
 }
 
-// SetSequenceNumber sets the sequence number on the message.
-func (ipfixmsg *Message) SetSequenceNumber(sequencenumber uint32) *Message {
+// SetSequenceNumber sets the sequence number on the message
+// Sequence Number: Incremental sequence counter modulo 2^32 of all IPFIX Data Records sent in the current stream from the current Observation Domain by the Exporting Process.
+// Each SCTP Stream counts sequence numbers separately, while all messages in a TCP connection or UDP session are considered to be part of the same stream.
+// This value can be used by the Collecting Process to identify whether any IPFIX Data Records have been missed.
+// Template and Options Template Records do not increase the Sequence Number..
+func (ipfixmsg *Message) SetSequenceNumber(sequencenumber uint32) error {
+	//Since it is an incremental counter we will never go negative hence we assume uint32
+	//NB: Sequence Numbers do *not* have to be unique as a message may contain only Template and/or Template Options Records
 	ipfixmsg.SequenceNumber = sequencenumber
-
-	return ipfixmsg
+	return nil
 }
 
 // AddSet adds an existing set to the message.
-func (ipfixmsg *Message) AddSet(newset *Set) *Message {
+func (ipfixmsg *Message) AddSet(newset *Set) (err error) {
+	if int(ipfixmsg.Len())+int(newset.Len()) > 65535 {
+		return NewError(fmt.Sprintf("Can not add set to message; resulting length would be %d but must be <= 65535", int(ipfixmsg.Len())+int(newset.Len())), ErrCritical)
+	}
 	ipfixmsg.Sets = append(ipfixmsg.Sets, newset)
-
-	return ipfixmsg
+	return nil
 }
 
 // MarshalBinary satisfies the encoding/BinaryMarshaler interface
@@ -98,7 +116,7 @@ func (ipfixmsg *Message) MarshalBinary() (data []byte, err error) {
 	//Set ID value identifies the Set.  A value of 2 is reserved for the Template Set.  A value of 3 is reserved for the Option Template Set.
 	//All other values from 4 to 255 are reserved for future use. Values above 255 are used for Data Sets.
 	if ipfixmsg.VersionNumber < IPFIXVersion {
-		return nil, fmt.Errorf("Invalid IPFIX Version Number: %d", ipfixmsg.VersionNumber)
+		return nil, NewError(fmt.Sprintf("Invalid IPFIX Version Number: %d", ipfixmsg.VersionNumber), ErrCritical)
 	}
 	buf := new(bytes.Buffer) //should get from pool?
 
@@ -107,8 +125,11 @@ func (ipfixmsg *Message) MarshalBinary() (data []byte, err error) {
 		return nil, err
 	}
 
-	totalsetlength := uint16(16) //FIXME
+	totalsetlength := uint16(16)
 	for _, set := range ipfixmsg.Sets {
+		if int(totalsetlength)+int(set.Len()) > 65535 {
+			return nil, NewError(fmt.Sprintf("Invalid total length of message. Got %d but should be <= 65535", int(totalsetlength)+int(set.Len())), ErrCritical)
+		}
 		totalsetlength += set.Len()
 	}
 	err = binary.Write(buf, binary.BigEndian, totalsetlength)
@@ -132,61 +153,83 @@ func (ipfixmsg *Message) MarshalBinary() (data []byte, err error) {
 
 	data = buf.Bytes()
 	for _, set := range ipfixmsg.Sets {
-		setdat, err := (*set).MarshalBinary()
-		if err != nil {
-			return nil, err
+		setdat, suberr := (*set).MarshalBinary()
+		if suberr != nil {
+			if err == nil {
+				err = NewError("Sub errors marshalling message.", ErrFailure)
+			}
+			err.(*ProtocolError).Stack(*suberr.(*ProtocolError))
 		}
 		data = append(data, setdat...)
 	}
 
-	return data, nil
+	return data, err
 }
 
 // UnmarshalBinary satisfies the encoding/BinaryUnmarshaler interface
-func (ipfixmsg *Message) UnmarshalBinary(data []byte) error {
+func (ipfixmsg *Message) UnmarshalBinary(data []byte) (err error) {
 	if data == nil || len(data) < 16 {
-		return fmt.Errorf("Can not unmarshal, invalid data. %#v", data)
+		return NewError(fmt.Sprintf("Can not unmarshal, invalid data. %#v", data), ErrCritical)
 	}
 	if ipfixmsg.AssociatedTemplates == nil {
-		return fmt.Errorf("Can not have nil pointer to associated templates")
+		return NewError(fmt.Sprintf("Can not have nil pointer to associated templates"), ErrCritical)
 	}
 
 	ipfixmsg.VersionNumber = binary.BigEndian.Uint16(data[0:2])
+	if ipfixmsg.VersionNumber < IPFIXVersion {
+		return NewError(fmt.Sprintf("Unusable IPFIX version. Want at least 10, but got %d", ipfixmsg.VersionNumber), ErrCritical)
+	}
 
 	totalmessagelength := binary.BigEndian.Uint16(data[2:4])
 	if int(totalmessagelength) > len(data) {
-		return fmt.Errorf("Can not unmarshal, invalid length. Message states %d but only have %d bytes of data", totalmessagelength, len(data))
+		return NewError(fmt.Sprintf("Can not unmarshal, invalid length. Message states %d but only have %d bytes of data", totalmessagelength, len(data)), ErrCritical)
+	}
+	fmt.Println("MESSAGELEN ", totalmessagelength)
+	err = ipfixmsg.SetExportTime(time.Unix(int64(binary.BigEndian.Uint32(data[4:8])), 0))
+	if err != nil {
+		return err
 	}
 
-	ipfixmsg.ExportTime = time.Unix(int64(binary.BigEndian.Uint32(data[4:8])), 0)
+	err = ipfixmsg.SetSequenceNumber(binary.BigEndian.Uint32(data[8:12]))
+	if err != nil {
+		return err
+	}
 
-	ipfixmsg.SequenceNumber = binary.BigEndian.Uint32(data[8:12])
-
-	ipfixmsg.ObservationDomainID = binary.BigEndian.Uint32(data[12:16])
+	err = ipfixmsg.SetObservationDomainID(binary.BigEndian.Uint32(data[12:16]))
+	if err != nil {
+		return err
+	}
 
 	cursor := uint16(16)
-	for cursor < totalmessagelength {
+	for cursor < (totalmessagelength - 4) { //Must have at least 4 bytes (actually more) for a set to be unmarshalled
 		tmpset := NewBlankSet()
 		tmpset.AssociateTemplates(ipfixmsg.AssociatedTemplates)
-		err := tmpset.UnmarshalBinary(data[cursor:])
-		if err != nil {
-			return err
+		suberr := tmpset.UnmarshalBinary(data[cursor:])
+		if suberr != nil {
+			if err == nil {
+				err = NewError("Sub errors unmarshalling message.", ErrFailure)
+			}
+			err.(*ProtocolError).Stack(suberr)
 		}
+
 		if tmpset.SetID == 2 { //Need to add/update all the messages
 			for _, rec := range tmpset.Records {
 				switch (*rec).(type) {
 				case *TemplateRecord:
-					err := ipfixmsg.AssociatedTemplates.Set((*rec).(*TemplateRecord).TemplateID, (*rec).(*TemplateRecord))
-					if err != nil {
-						return err
+					suberr := ipfixmsg.AssociatedTemplates.Set((*rec).(*TemplateRecord).TemplateID, (*rec).(*TemplateRecord))
+					if suberr != nil {
+						if err == nil {
+							err = NewError("Sub errors unmarshalling message.", ErrFailure)
+						}
+						err.(*ProtocolError).Stack(suberr)
 					}
 				case *DataRecord:
-					return fmt.Errorf("Datarecord in template set")
+					return NewError(fmt.Sprintf("Datarecord in template set"), ErrCritical)
 				}
 			}
 		}
 		ipfixmsg.Sets = append(ipfixmsg.Sets, tmpset)
 		cursor += tmpset.Len()
 	}
-	return nil
+	return err
 }
