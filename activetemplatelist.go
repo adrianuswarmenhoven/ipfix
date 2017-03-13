@@ -31,10 +31,10 @@ func NewActiveTemplateList() *ActiveTemplates {
 //Set adds or replaces a template in the list
 func (at *ActiveTemplates) Set(id uint16, tpl *TemplateRecord) error {
 	if id < 256 {
-		return fmt.Errorf("Invalid template id. Must be >=256 but got %d", id)
+		return NewError(fmt.Sprintf("Invalid template id. Must be >=256 but got %d", id), ErrCritical)
 	}
 	if tpl == nil {
-		return fmt.Errorf("Got nil pointer to template")
+		return NewError("Got nil pointer to template", ErrCritical)
 	}
 	at.Lock()
 	defer at.Unlock()
@@ -71,7 +71,7 @@ func (at *ActiveTemplates) Set(id uint16, tpl *TemplateRecord) error {
 //Get returns the template record for the id or an error if not found
 func (at *ActiveTemplates) Get(id uint16) (*TemplateRecord, error) {
 	if at == nil {
-		return nil, fmt.Errorf("No active templates available")
+		return nil, NewError("No active templates available", ErrCritical)
 	}
 	at.Lock()
 	defer at.Unlock()
@@ -79,7 +79,7 @@ func (at *ActiveTemplates) Get(id uint16) (*TemplateRecord, error) {
 	var tmpl *ActiveTemplate
 	var found bool
 	if tmpl, found = at.Template[id]; !found {
-		return nil, fmt.Errorf("No such template (%d) in list.", id) //Not necessarily a fatal error.
+		return nil, NewError(fmt.Sprintf("No such template (%d) in list.", id), ErrFailure) //Not necessarily a fatal error. May hold back until we get a new one
 	}
 	tmpl.LastAccessed = time.Now()
 	tmpl.NofAccess++

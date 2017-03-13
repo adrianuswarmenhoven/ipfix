@@ -22,7 +22,7 @@ func EncodeVariableLength(content []byte, rfc6313recommended bool) ([]byte, erro
 		retval = []byte{uint8(len(content))}
 	} else {
 		if len(content) > 65535 {
-			return []byte{}, fmt.Errorf("Content too large, maximum of 65535 octets, but it is %d", len(content))
+			return []byte{}, NewError(fmt.Sprintf("Content too large, maximum of 65535 octets, but it is %d", len(content)), ErrCritical)
 		}
 		lengthBytes := []byte{255}
 		lengthContentBytes, err := marshalBinarySingleValue(uint16(len(content)))
@@ -40,7 +40,7 @@ func DecodeVariableLength(content []byte) (uint16, uint8, error) {
 	cursorshift := uint8(0)
 	retval := uint16(0)
 	if content[0] == 0 {
-		return 0, 0, fmt.Errorf("Content can not be 0 in length.")
+		return 0, 0, NewError("Content can not be 0 in length.", ErrCritical)
 	}
 	if content[0] < 255 {
 		retval = uint16(content[0])

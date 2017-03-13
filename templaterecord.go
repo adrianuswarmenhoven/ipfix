@@ -144,7 +144,7 @@ func (tmplrec *TemplateRecord) Len() uint16 {
 // MarshalBinary satisfies the encoding/BinaryMarshaler interface
 func (tmplrec *TemplateRecord) MarshalBinary() (data []byte, err error) {
 	if len(tmplrec.FieldSpecifiers) < 1 {
-		return nil, fmt.Errorf("Can not marshal record, must have at least one Field Specifier")
+		return nil, NewError("Can not marshal record, must have at least one Field Specifier", ErrCritical)
 	}
 
 	marshalValue := make([]byte, 0, 0)
@@ -186,9 +186,9 @@ func (tmplrec *TemplateRecord) MarshalBinary() (data []byte, err error) {
 }
 
 // UnmarshalBinary satisfies the encoding/BinaryUnmarshaler interface
-func (tmplrec *TemplateRecord) UnmarshalBinary(data []byte) error {
+func (tmplrec *TemplateRecord) UnmarshalBinary(data []byte) (err error) {
 	if data == nil || len(data) < 6 {
-		return fmt.Errorf("Can not unmarshal, invalid data. %#v", data)
+		return NewError(fmt.Sprintf("Can not unmarshal, invalid data. %#v", data), ErrCritical)
 	}
 	tmplrec.TemplateID = binary.BigEndian.Uint16(data[0:2])
 	totalFieldCount := binary.BigEndian.Uint16(data[2:4])
@@ -198,34 +198,52 @@ func (tmplrec *TemplateRecord) UnmarshalBinary(data []byte) error {
 		scopeFieldCount = binary.BigEndian.Uint16(data[4:6])
 		cursor = 6
 	}
-	fmt.Println("FIELDS", totalFieldCount, scopeFieldCount)
-
 	for cnt := uint16(0); cnt < scopeFieldCount; cnt++ {
 		scopeField := &FieldSpecifier{}
 		if (data[cursor] & 128) != 0 {
-			fmt.Println("a", scopeField.UnmarshalBinary(data[cursor:cursor+8]))
+			suberr := scopeField.UnmarshalBinary(data[cursor : cursor+8])
+			if suberr != nil {
+				if err == nil {
+					err = NewError("Sub errors unmarshalling record.", ErrFailure)
+				}
+				err.(*ProtocolError).Stack(suberr)
+			}
 			cursor += uint16(8)
 		} else {
-			fmt.Println("b", scopeField.UnmarshalBinary(data[cursor:cursor+4]))
+			suberr := scopeField.UnmarshalBinary(data[cursor : cursor+4])
+			if suberr != nil {
+				if err == nil {
+					err = NewError("Sub errors unmarshalling record.", ErrFailure)
+				}
+				err.(*ProtocolError).Stack(suberr)
+			}
 			cursor += uint16(4)
 		}
-		fmt.Println("XX", scopeField)
 		tmplrec.ScopeFieldSpecifiers = append(tmplrec.ScopeFieldSpecifiers, scopeField)
 	}
-	fmt.Println("Rec", tmplrec)
-	fmt.Println(totalFieldCount)
 	for cnt := uint16(0); cnt < (totalFieldCount - scopeFieldCount); cnt++ {
 		fieldSpecifier := &FieldSpecifier{}
 		if (data[cursor] & 128) != 0 {
-			fmt.Println("c", fieldSpecifier.UnmarshalBinary(data[cursor:cursor+8]))
+			suberr := fieldSpecifier.UnmarshalBinary(data[cursor : cursor+8])
+			if suberr != nil {
+				if err == nil {
+					err = NewError("Sub errors unmarshalling record.", ErrFailure)
+				}
+				err.(*ProtocolError).Stack(suberr)
+			}
+
 			cursor += uint16(8)
 		} else {
-			fmt.Println("d", fieldSpecifier.UnmarshalBinary(data[cursor:cursor+4]))
+			suberr := fieldSpecifier.UnmarshalBinary(data[cursor : cursor+4])
+			if suberr != nil {
+				if err == nil {
+					err = NewError("Sub errors unmarshalling record.", ErrFailure)
+				}
+				err.(*ProtocolError).Stack(suberr)
+			}
 			cursor += uint16(4)
 		}
-		fmt.Println(fieldSpecifier)
 		tmplrec.FieldSpecifiers = append(tmplrec.FieldSpecifiers, fieldSpecifier)
 	}
-	fmt.Println(tmplrec)
-	return nil
+	return err
 }

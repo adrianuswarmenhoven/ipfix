@@ -184,7 +184,6 @@ func (ipfixmsg *Message) UnmarshalBinary(data []byte) (err error) {
 	if int(totalmessagelength) > len(data) {
 		return NewError(fmt.Sprintf("Can not unmarshal, invalid length. Message states %d but only have %d bytes of data", totalmessagelength, len(data)), ErrCritical)
 	}
-	fmt.Println("MESSAGELEN ", totalmessagelength)
 	err = ipfixmsg.SetExportTime(time.Unix(int64(binary.BigEndian.Uint32(data[4:8])), 0))
 	if err != nil {
 		return err

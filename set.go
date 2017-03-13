@@ -168,7 +168,7 @@ func (ipfixset *Set) MarshalBinary() (data []byte, err error) {
 // UnmarshalBinary satisfies the encoding/BinaryUnmarshaler interface
 func (ipfixset *Set) UnmarshalBinary(data []byte) error {
 	if data == nil || len(data) < 4 {
-		return fmt.Errorf("Can not unmarshal, invalid data. %#v", data)
+		return NewError(fmt.Sprintf("Can not unmarshal, invalid data. %#v", data), ErrCritical)
 	}
 
 	ipfixset.SetID = binary.BigEndian.Uint16(data[0:2])

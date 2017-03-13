@@ -17,10 +17,10 @@ type BasicList struct {
 // NewBasicList returns a BasicList. If the Enterprise ID is 0 then the Enterprise Bit will not be set.
 func NewBasicList(semantic uint8, enterpriseid uint32, informationelementid, fieldlength uint16) (*BasicList, error) {
 	if informationelementid >= 32768 {
-		return nil, fmt.Errorf("Information Element ID can not be greater than 32767, but got %d", informationelementid)
+		return nil, NewError(fmt.Sprintf("Information Element ID can not be greater than 32767, but got %d", informationelementid), ErrCritical)
 	}
 	if semantic >= 0x05 && semantic <= 0xFE {
-		return nil, fmt.Errorf("Semantic undefined: %d", semantic)
+		return nil, NewError(fmt.Sprintf("Semantic undefined: %d", semantic), ErrCritical)
 	}
 	return &BasicList{
 		Semantic: semantic,

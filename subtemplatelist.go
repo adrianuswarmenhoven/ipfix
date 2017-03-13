@@ -14,10 +14,10 @@ type SubTemplateList struct {
 // NewSubTemplateList returns a new SubTemplateList.
 func NewSubTemplateList(semantic uint8, templateid uint16) (*SubTemplateList, error) {
 	if templateid < 256 {
-		return nil, fmt.Errorf("Can not have a template id <256, but got %d", templateid)
+		return nil, NewError(fmt.Sprintf("Can not have a template id <256, but got %d", templateid), ErrCritical)
 	}
 	if semantic >= 0x05 && semantic <= 0xFE {
-		return nil, fmt.Errorf("Semantic undefined: %d", semantic)
+		return nil, NewError(fmt.Sprintf("Semantic undefined: %d", semantic), ErrCritical)
 	}
 	return &SubTemplateList{
 		Semantic:   semantic,
@@ -38,7 +38,7 @@ func (stl *SubTemplateList) Len() uint16 {
 // AssociateTemplates sets the template to be used marshalling/unmarshalling this SubTemplateList
 func (stl *SubTemplateList) AssociateTemplates(at *ActiveTemplates) error {
 	if at == nil {
-		return fmt.Errorf("Can not use nil as Template List")
+		return NewError(fmt.Sprintf("Can not use nil as Template List"), ErrCritical)
 	}
 	stl.AssociatedTemplates = at
 	return nil

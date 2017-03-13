@@ -63,7 +63,7 @@ func (fv *FieldValueUnsigned8) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary fills the value from Network Byte Order byte representation
 func (fv *FieldValueUnsigned8) UnmarshalBinary(data []byte) error {
 	if len(data) < 1 {
-		return fmt.Errorf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data))
+		return NewError(fmt.Sprintf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data)), ErrCritical)
 	}
 	fv.value = data[0]
 	return nil
@@ -85,7 +85,7 @@ func (fv *FieldValueUnsigned8) Set(val interface{}) error {
 	case uint8:
 		fv.value = val.(uint8)
 	default:
-		return fmt.Errorf("Invalid type for %s", reflect.TypeOf(fv))
+		return NewError(fmt.Sprintf("Invalid type for %s", reflect.TypeOf(fv)), ErrCritical)
 	}
 	return nil
 }
@@ -104,9 +104,9 @@ func (fv *FieldValueUnsigned16) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary fills the value from Network Byte Order byte representation
 func (fv *FieldValueUnsigned16) UnmarshalBinary(data []byte) error {
 	if len(data) < 1 {
-		return fmt.Errorf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data))
+		return NewError(fmt.Sprintf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data)), ErrCritical)
 	} else if len(data) < 2 {
-		//We prepend 0s if the exporter encoded it in less bytes than we need
+		//We prepend 0s (zeroes) if the exporter encoded it in less bytes than we need
 		fv.value = binary.BigEndian.Uint16(append(bufferfiller[:1], data...))
 	} else {
 		fv.value = binary.BigEndian.Uint16(data)
@@ -130,7 +130,7 @@ func (fv *FieldValueUnsigned16) Set(val interface{}) error {
 	case uint16:
 		fv.value = val.(uint16)
 	default:
-		return fmt.Errorf("Invalid type for %s", reflect.TypeOf(fv))
+		return NewError(fmt.Sprintf("Invalid type for %s", reflect.TypeOf(fv)), ErrCritical)
 	}
 	return nil
 }
@@ -149,7 +149,7 @@ func (fv *FieldValueUnsigned32) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary fills the value from Network Byte Order byte representation
 func (fv *FieldValueUnsigned32) UnmarshalBinary(data []byte) error {
 	if len(data) < 1 {
-		return fmt.Errorf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data))
+		return NewError(fmt.Sprintf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data)), ErrCritical)
 	} else if len(data) < 4 {
 		//We prepend 0s if the exporter encoded it in less bytes than we need
 		fv.value = binary.BigEndian.Uint32(append(bufferfiller[:4-len(data)], data...))
@@ -175,7 +175,7 @@ func (fv *FieldValueUnsigned32) Set(val interface{}) error {
 	case uint32:
 		fv.value = val.(uint32)
 	default:
-		return fmt.Errorf("Invalid type for %s", reflect.TypeOf(fv))
+		return NewError(fmt.Sprintf("Invalid type for %s", reflect.TypeOf(fv)), ErrCritical)
 	}
 	return nil
 }
@@ -194,7 +194,7 @@ func (fv *FieldValueUnsigned64) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary fills the value from Network Byte Order byte representation
 func (fv *FieldValueUnsigned64) UnmarshalBinary(data []byte) error {
 	if len(data) < 1 {
-		return fmt.Errorf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data))
+		return NewError(fmt.Sprintf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data)), ErrCritical)
 	} else if len(data) < 8 {
 		//We prepend 0s if the exporter encoded it in less bytes than we need
 		fv.value = binary.BigEndian.Uint64(append(bufferfiller[:8-len(data)], data...))
@@ -220,7 +220,7 @@ func (fv *FieldValueUnsigned64) Set(val interface{}) error {
 	case uint64:
 		fv.value = val.(uint64)
 	default:
-		return fmt.Errorf("Invalid type for %s", reflect.TypeOf(fv))
+		return NewError(fmt.Sprintf("Invalid type for %s", reflect.TypeOf(fv)), ErrCritical)
 	}
 	return nil
 }
@@ -239,7 +239,7 @@ func (fv *FieldValueSigned8) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary fills the value from Network Byte Order byte representation
 func (fv *FieldValueSigned8) UnmarshalBinary(data []byte) error {
 	if len(data) < 1 {
-		return fmt.Errorf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data))
+		return NewError(fmt.Sprintf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data)), ErrCritical)
 	}
 	fv.value = int8(data[0])
 	return nil
@@ -261,7 +261,7 @@ func (fv *FieldValueSigned8) Set(val interface{}) error {
 	case int8:
 		fv.value = val.(int8)
 	default:
-		return fmt.Errorf("Invalid type for %s", reflect.TypeOf(fv))
+		return NewError(fmt.Sprintf("Invalid type for %s", reflect.TypeOf(fv)), ErrCritical)
 	}
 	return nil
 }
@@ -280,7 +280,7 @@ func (fv *FieldValueSigned16) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary fills the value from Network Byte Order byte representation
 func (fv *FieldValueSigned16) UnmarshalBinary(data []byte) error {
 	if len(data) < 1 {
-		return fmt.Errorf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data))
+		return NewError(fmt.Sprintf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data)), ErrCritical)
 	} else if len(data) < 2 {
 		//We prepend 0s if the exporter encoded it in less bytes than we need
 		fv.value = int16(binary.BigEndian.Uint16(append(bufferfiller[:2-len(data)], data...)))
@@ -306,7 +306,7 @@ func (fv *FieldValueSigned16) Set(val interface{}) error {
 	case int16:
 		fv.value = val.(int16)
 	default:
-		return fmt.Errorf("Invalid type for %s", reflect.TypeOf(fv))
+		return NewError(fmt.Sprintf("Invalid type for %s", reflect.TypeOf(fv)), ErrCritical)
 	}
 	return nil
 }
@@ -325,7 +325,7 @@ func (fv *FieldValueSigned32) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary fills the value from Network Byte Order byte representation
 func (fv *FieldValueSigned32) UnmarshalBinary(data []byte) error {
 	if len(data) < 1 {
-		return fmt.Errorf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data))
+		return NewError(fmt.Sprintf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data)), ErrCritical)
 	} else if len(data) < 4 {
 		//We prepend 0s if the exporter encoded it in less bytes than we need
 		fv.value = int32(binary.BigEndian.Uint32(append(bufferfiller[:4-len(data)], data...)))
@@ -351,7 +351,7 @@ func (fv *FieldValueSigned32) Set(val interface{}) error {
 	case int32:
 		fv.value = val.(int32)
 	default:
-		return fmt.Errorf("Invalid type for %s", reflect.TypeOf(fv))
+		return NewError(fmt.Sprintf("Invalid type for %s", reflect.TypeOf(fv)), ErrCritical)
 	}
 	return nil
 }
@@ -370,7 +370,7 @@ func (fv *FieldValueSigned64) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary fills the value from Network Byte Order byte representation
 func (fv *FieldValueSigned64) UnmarshalBinary(data []byte) error {
 	if len(data) < 1 {
-		return fmt.Errorf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data))
+		return NewError(fmt.Sprintf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data)), ErrCritical)
 	} else if len(data) < 8 {
 		//We prepend 0s if the exporter encoded it in less bytes than we need
 		fv.value = int64(binary.BigEndian.Uint64(append(bufferfiller[:8-len(data)], data...)))
@@ -396,7 +396,7 @@ func (fv *FieldValueSigned64) Set(val interface{}) error {
 	case int64:
 		fv.value = val.(int64)
 	default:
-		return fmt.Errorf("Invalid type for %s", reflect.TypeOf(fv))
+		return NewError(fmt.Sprintf("Invalid type for %s", reflect.TypeOf(fv)), ErrCritical)
 	}
 	return nil
 }
@@ -415,7 +415,7 @@ func (fv *FieldValueFloat32) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary fills the value from Network Byte Order byte representation
 func (fv *FieldValueFloat32) UnmarshalBinary(data []byte) error {
 	if len(data) < 4 {
-		return fmt.Errorf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data))
+		return NewError(fmt.Sprintf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data)), ErrCritical)
 	}
 	fv.value = math.Float32frombits(binary.BigEndian.Uint32(data))
 	return nil
@@ -437,7 +437,7 @@ func (fv *FieldValueFloat32) Set(val interface{}) error {
 	case float32:
 		fv.value = val.(float32)
 	default:
-		return fmt.Errorf("Invalid type for %s", reflect.TypeOf(fv))
+		return NewError(fmt.Sprintf("Invalid type for %s", reflect.TypeOf(fv)), ErrCritical)
 	}
 	return nil
 }
@@ -456,13 +456,13 @@ func (fv *FieldValueFloat64) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary fills the value from Network Byte Order byte representation
 func (fv *FieldValueFloat64) UnmarshalBinary(data []byte) error {
 	if len(data) < 4 {
-		return fmt.Errorf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data))
+		return NewError(fmt.Sprintf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data)), ErrCritical)
 	} else if len(data) == 4 {
 		fv.value = float64(math.Float32frombits(binary.BigEndian.Uint32(data)))
 	} else if len(data) == 8 {
 		fv.value = math.Float64frombits(binary.BigEndian.Uint64(data))
 	} else {
-		return fmt.Errorf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data))
+		return NewError(fmt.Sprintf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data)), ErrCritical)
 	}
 	return nil
 }
@@ -483,7 +483,7 @@ func (fv *FieldValueFloat64) Set(val interface{}) error {
 	case float64:
 		fv.value = val.(float64)
 	default:
-		return fmt.Errorf("Invalid type for %s", reflect.TypeOf(fv))
+		return NewError(fmt.Sprintf("Invalid type for %s", reflect.TypeOf(fv)), ErrCritical)
 	}
 	return nil
 }
@@ -508,7 +508,7 @@ func (fv *FieldValueBoolean) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary fills the value from Network Byte Order byte representation
 func (fv *FieldValueBoolean) UnmarshalBinary(data []byte) error {
 	if len(data) < 1 {
-		return fmt.Errorf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data))
+		return NewError(fmt.Sprintf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data)), ErrCritical)
 	}
 	switch data[0] {
 	case 1:
@@ -516,7 +516,7 @@ func (fv *FieldValueBoolean) UnmarshalBinary(data []byte) error {
 	case 2:
 		fv.value = false
 	default:
-		return fmt.Errorf("Invalid encoded value for boolean: %d, must be either 1 or 2", data[0])
+		return NewError(fmt.Sprintf("Invalid encoded value for boolean: %d, must be either 1 or 2", data[0]), ErrCritical)
 	}
 	return nil
 }
@@ -537,7 +537,7 @@ func (fv *FieldValueBoolean) Set(val interface{}) error {
 	case bool:
 		fv.value = val.(bool)
 	default:
-		return fmt.Errorf("Invalid type for %s", reflect.TypeOf(fv))
+		return NewError(fmt.Sprintf("Invalid type for %s", reflect.TypeOf(fv)), ErrCritical)
 	}
 	return nil
 }
@@ -557,7 +557,7 @@ func (fv *FieldValueMacAddress) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary fills the value from Network Byte Order byte representation
 func (fv *FieldValueMacAddress) UnmarshalBinary(data []byte) error {
 	if len(data) < 6 {
-		return fmt.Errorf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data))
+		return NewError(fmt.Sprintf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data)), ErrCritical)
 	}
 	tmpval := make([]byte, len(data))
 	err := unmarshalBinaryOctets(data, tmpval)
@@ -584,7 +584,7 @@ func (fv *FieldValueMacAddress) Set(val interface{}) error {
 	case net.HardwareAddr:
 		fv.value = val.(net.HardwareAddr)
 	default:
-		return fmt.Errorf("Invalid type for %s", reflect.TypeOf(fv))
+		return NewError(fmt.Sprintf("Invalid type for %s", reflect.TypeOf(fv)), ErrCritical)
 	}
 	return nil
 }
@@ -629,7 +629,7 @@ func (fv *FieldValueOctetArray) Set(val interface{}) error {
 	case []byte:
 		fv.value = val.([]byte)
 	default:
-		return fmt.Errorf("Invalid type for %s", reflect.TypeOf(fv))
+		return NewError(fmt.Sprintf("Invalid type for %s", reflect.TypeOf(fv)), ErrCritical)
 	}
 	return nil
 }
@@ -676,7 +676,7 @@ func (fv *FieldValueString) Set(val interface{}) error {
 	case []byte:
 		fv.value = string(val.([]byte))
 	default:
-		return fmt.Errorf("Invalid type for %s", reflect.TypeOf(fv))
+		return NewError(fmt.Sprintf("Invalid type for %s", reflect.TypeOf(fv)), ErrCritical)
 	}
 	return nil
 }
@@ -698,7 +698,7 @@ func (fv *FieldValueDateTimeSeconds) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary fills the value from Network Byte Order byte representation
 func (fv *FieldValueDateTimeSeconds) UnmarshalBinary(data []byte) error {
 	if len(data) < 4 {
-		return fmt.Errorf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data))
+		return NewError(fmt.Sprintf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data)), ErrCritical)
 	}
 	secondsSinceEpoch := binary.BigEndian.Uint32(data)
 	fv.value = time.Unix(int64(secondsSinceEpoch), 0)
@@ -721,7 +721,7 @@ func (fv *FieldValueDateTimeSeconds) Set(val interface{}) error {
 	case time.Time:
 		fv.value = val.(time.Time)
 	default:
-		return fmt.Errorf("Invalid type for %s", reflect.TypeOf(fv))
+		return NewError(fmt.Sprintf("Invalid type for %s", reflect.TypeOf(fv)), ErrCritical)
 	}
 	return nil
 }
@@ -742,7 +742,7 @@ func (fv *FieldValueDateTimeMilliseconds) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary fills the value from Network Byte Order byte representation
 func (fv *FieldValueDateTimeMilliseconds) UnmarshalBinary(data []byte) error {
 	if len(data) < 8 {
-		return fmt.Errorf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data))
+		return NewError(fmt.Sprintf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data)), ErrCritical)
 	}
 	milliSecondsSinceEpoch := binary.BigEndian.Uint64(data)
 	secondsSinceEpoch := uint64(milliSecondsSinceEpoch) / uint64(1000)
@@ -767,7 +767,7 @@ func (fv *FieldValueDateTimeMilliseconds) Set(val interface{}) error {
 	case time.Time:
 		fv.value = val.(time.Time)
 	default:
-		return fmt.Errorf("Invalid type for %s", reflect.TypeOf(fv))
+		return NewError(fmt.Sprintf("Invalid type for %s", reflect.TypeOf(fv)), ErrCritical)
 	}
 	return nil
 }
@@ -805,7 +805,7 @@ func (fv *FieldValueDateTimeMicroseconds) MarshalBinary() ([]byte, error) {
 	marshalValue = append(marshalValue, marshalSec...)
 	marshalValue = append(marshalValue, marshalFrac...)
 	if len(marshalValue) != 8 {
-		return nil, fmt.Errorf("Incorrect length when marshalling. Wanted %d, got %d.", 8, len(marshalValue))
+		return nil, NewError(fmt.Sprintf("Incorrect length when marshalling. Wanted %d, got %d.", 8, len(marshalValue)), ErrCritical)
 	}
 	return marshalValue, nil
 }
@@ -813,7 +813,7 @@ func (fv *FieldValueDateTimeMicroseconds) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary fills the value from Network Byte Order byte representation
 func (fv *FieldValueDateTimeMicroseconds) UnmarshalBinary(data []byte) error {
 	if len(data) < 8 {
-		return fmt.Errorf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data))
+		return NewError(fmt.Sprintf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data)), ErrCritical)
 	}
 	baseValueSeconds := int64(binary.BigEndian.Uint32(data[:4])) - int64(epochDelta)
 	baseValueFractions := (int64(1+binary.BigEndian.Uint32(data[4:])) * 1e9) >> 32 //Yeah... that offset... for some reason it is necessary
@@ -837,7 +837,7 @@ func (fv *FieldValueDateTimeMicroseconds) Set(val interface{}) error {
 	case time.Time:
 		fv.value = val.(time.Time)
 	default:
-		return fmt.Errorf("Invalid type for %s", reflect.TypeOf(fv))
+		return NewError(fmt.Sprintf("Invalid type for %s", reflect.TypeOf(fv)), ErrCritical)
 	}
 	return nil
 }
@@ -873,7 +873,7 @@ func (fv *FieldValueDateTimeNanoseconds) MarshalBinary() ([]byte, error) {
 	marshalValue = append(marshalValue, marshalSec...)
 	marshalValue = append(marshalValue, marshalFrac...)
 	if len(marshalValue) != 8 {
-		return nil, fmt.Errorf("Incorrect length when marshalling. Wanted %d, got %d.", 8, len(marshalValue))
+		return nil, NewError(fmt.Sprintf("Incorrect length when marshalling. Wanted %d, got %d.", 8, len(marshalValue)), ErrCritical)
 	}
 	return marshalValue, nil
 }
@@ -881,7 +881,7 @@ func (fv *FieldValueDateTimeNanoseconds) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary fills the value from Network Byte Order byte representation
 func (fv *FieldValueDateTimeNanoseconds) UnmarshalBinary(data []byte) error {
 	if len(data) < 8 {
-		return fmt.Errorf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data))
+		return NewError(fmt.Sprintf("Insufficient data. Need length %d, but got %d.", fv.Len(), len(data)), ErrCritical)
 	}
 	baseValueSeconds := int64(binary.BigEndian.Uint32(data[:4])) - int64(epochDelta)
 	baseValueFractions := (int64(1+binary.BigEndian.Uint32(data[4:])) * 1e9) >> 32 //Yeah... that offset... for some reason it is necessary
@@ -905,7 +905,7 @@ func (fv *FieldValueDateTimeNanoseconds) Set(val interface{}) error {
 	case time.Time:
 		fv.value = val.(time.Time)
 	default:
-		return fmt.Errorf("Invalid type for %s", reflect.TypeOf(fv))
+		return NewError(fmt.Sprintf("Invalid type for %s", reflect.TypeOf(fv)), ErrCritical)
 	}
 	return nil
 }
@@ -949,12 +949,12 @@ func (fv *FieldValueIPv4Address) Set(val interface{}) error {
 		if tmpip != nil {
 			fv.value = tmpip
 		} else {
-			return fmt.Errorf("Value is not an IP Address: %s", val.(string))
+			return NewError(fmt.Sprintf("Value is not an IP Address: %s", val.(string)), ErrCritical)
 		}
 	case net.IP:
 		fv.value = val.(net.IP)
 	default:
-		return fmt.Errorf("Invalid type for %s", reflect.TypeOf(fv))
+		return NewError(fmt.Sprintf("Invalid type for %s", reflect.TypeOf(fv)), ErrCritical)
 	}
 	return nil
 }
@@ -998,12 +998,12 @@ func (fv *FieldValueIPv6Address) Set(val interface{}) error {
 		if tmpip != nil {
 			fv.value = tmpip
 		} else {
-			return fmt.Errorf("Value is not an IP Address: %s", val.(string))
+			return NewError(fmt.Sprintf("Value is not an IP Address: %s", val.(string)), ErrCritical)
 		}
 	case net.IP:
 		fv.value = val.(net.IP)
 	default:
-		return fmt.Errorf("Invalid type for %s", reflect.TypeOf(fv))
+		return NewError(fmt.Sprintf("Invalid type for %s", reflect.TypeOf(fv)), ErrCritical)
 	}
 	return nil
 }
@@ -1139,7 +1139,7 @@ func (fv *FieldValueBasicList) Set(val interface{}) error {
 	case BasicList:
 		fv.value = val.(BasicList)
 	default:
-		return fmt.Errorf("Invalid type for %s", reflect.TypeOf(fv))
+		return NewError(fmt.Sprintf("Invalid type for %s", reflect.TypeOf(fv)), ErrCritical)
 	}
 	return nil
 }
@@ -1153,7 +1153,7 @@ type FieldValueSubTemplateList struct {
 // SetAssiocatedTemplates sets the list of templates belonging to this session
 func (fv *FieldValueSubTemplateList) SetAssiocatedTemplates(at *ActiveTemplates) error {
 	if at == nil {
-		return fmt.Errorf("Can not set associated templates to nil")
+		return NewError("Can not set associated templates to nil", ErrCritical)
 	}
 	fv.value.AssociatedTemplates = at
 	return nil
@@ -1162,10 +1162,10 @@ func (fv *FieldValueSubTemplateList) SetAssiocatedTemplates(at *ActiveTemplates)
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
 func (fv *FieldValueSubTemplateList) MarshalBinary() ([]byte, error) {
 	if fv.value.AssociatedTemplates == nil {
-		return nil, fmt.Errorf("Can not marshal without associated templates")
+		return nil, NewError("Can not marshal without associated templates", ErrCritical)
 	}
 	if fv.value.TemplateID < 256 {
-		return nil, fmt.Errorf("Can not marshal without a template id")
+		return nil, NewError("Can not marshal without a template id", ErrCritical)
 	}
 	marshalValue := make([]byte, 0, 0)
 	marshalValue = append(marshalValue, fv.value.Semantic)
@@ -1191,10 +1191,10 @@ func (fv *FieldValueSubTemplateList) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary fills the value from Network Byte Order byte representation
 func (fv *FieldValueSubTemplateList) UnmarshalBinary(data []byte) error {
 	if fv.value.AssociatedTemplates == nil {
-		return fmt.Errorf("Can not marshal without associated templates")
+		return NewError("Can not marshal without associated templates", ErrFailure) //This is a failure and not critical because we can re-do later
 	}
 	if data == nil || len(data) == 0 {
-		return fmt.Errorf("Can not unmarshal, invalid data. %#v", data)
+		return NewError(fmt.Sprintf("Can not unmarshal, invalid data. %#v", data), ErrCritical)
 	}
 
 	fv.value = SubTemplateList{AssociatedTemplates: fv.value.AssociatedTemplates, TemplateID: fv.value.TemplateID} //Create a clean copy with correct data, may not be necessary
@@ -1203,7 +1203,7 @@ func (fv *FieldValueSubTemplateList) UnmarshalBinary(data []byte) error {
 	fv.value.Semantic = data[0]
 	fv.value.TemplateID = binary.BigEndian.Uint16(data[1:3])
 	if fv.value.TemplateID < 256 {
-		return fmt.Errorf("Can not marshal without a template id")
+		return NewError(fmt.Sprintf("Can not marshal without a template id"), ErrCritical)
 	}
 	cursor := uint16(3)
 	for cursor < uint16(len(data)) {
@@ -1238,7 +1238,7 @@ func (fv *FieldValueSubTemplateList) Set(val interface{}) error {
 	case FieldValueSubTemplateList:
 		fv.value = val.(SubTemplateList)
 	default:
-		return fmt.Errorf("Invalid type for %s", reflect.TypeOf(fv))
+		return NewError(fmt.Sprintf("Invalid type for %s", reflect.TypeOf(fv)), ErrCritical)
 	}
 	return nil
 }
@@ -1252,7 +1252,7 @@ type FieldValueSubTemplateMultiList struct {
 // SetAssiocatedTemplates sets the list of templates belonging to this session
 func (fv *FieldValueSubTemplateMultiList) SetAssiocatedTemplates(at *ActiveTemplates) error {
 	if at == nil {
-		return fmt.Errorf("Can not set associated templates to nil")
+		return NewError(fmt.Sprintf("Can not set associated templates to nil"), ErrCritical)
 	}
 	fv.value.AssociatedTemplates = at
 	return nil
@@ -1261,7 +1261,7 @@ func (fv *FieldValueSubTemplateMultiList) SetAssiocatedTemplates(at *ActiveTempl
 // MarshalBinary returns the Network Byte Order byte representation of this Field Value
 func (fv *FieldValueSubTemplateMultiList) MarshalBinary() ([]byte, error) {
 	if fv.value.AssociatedTemplates == nil {
-		return nil, fmt.Errorf("Can not marshal without associated templates")
+		return nil, NewError("Can not marshal without associated templates", ErrFailure) //Failure because we may be able to do this later
 	}
 	marshalValue := make([]byte, 0, 0)
 	marshalValue = append(marshalValue, fv.value.Semantic)
@@ -1270,7 +1270,7 @@ func (fv *FieldValueSubTemplateMultiList) MarshalBinary() ([]byte, error) {
 			subtpldat.AssociateTemplates(fv.value.AssociatedTemplates)
 		}
 		if subtpldat.TemplateID < 256 {
-			return nil, fmt.Errorf("Can not marshal without a template id. Error in sub template %d (%#v)", idx, *subtpldat)
+			return nil, NewError(fmt.Sprintf("Can not marshal without a template id. Error in sub template %d (%#v)", idx, *subtpldat), ErrCritical)
 		}
 
 		marshalTemplateID, err := marshalBinarySingleValue(subtpldat.TemplateID)
@@ -1308,10 +1308,10 @@ func (fv *FieldValueSubTemplateMultiList) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary fills the value from Network Byte Order byte representation
 func (fv *FieldValueSubTemplateMultiList) UnmarshalBinary(data []byte) error {
 	if fv.value.AssociatedTemplates == nil {
-		return fmt.Errorf("Can not marshal without associated templates")
+		return NewError("Can not marshal without associated templates", ErrFailure) //Failure because we may be able to do this later
 	}
 	if data == nil || len(data) == 0 {
-		return fmt.Errorf("Can not unmarshal, invalid data. %#v", data)
+		return NewError(fmt.Sprintf("Can not unmarshal, invalid data. %#v", data), ErrCritical)
 	}
 
 	fv.value = SubTemplateMultiList{AssociatedTemplates: fv.value.AssociatedTemplates, SubTemplates: make([]*SubTemplateData, 0, 0)} //Create a clean copy with correct data, may not be necessary
@@ -1320,7 +1320,7 @@ func (fv *FieldValueSubTemplateMultiList) UnmarshalBinary(data []byte) error {
 	for cursor < uint16(len(data)) {
 		newtplid := binary.BigEndian.Uint16(data[cursor : cursor+2])
 		if newtplid < 256 {
-			return fmt.Errorf("Can not unmarshal without a proper template id")
+			return NewError("Can not unmarshal without a proper template id", ErrCritical)
 		}
 		cursor += 2
 		newtpllen := binary.BigEndian.Uint16(data[cursor : cursor+2])
@@ -1367,7 +1367,7 @@ func (fv *FieldValueSubTemplateMultiList) Set(val interface{}) error {
 	case FieldValueSubTemplateMultiList:
 		fv.value = val.(SubTemplateMultiList)
 	default:
-		return fmt.Errorf("Invalid type for %s", reflect.TypeOf(fv))
+		return NewError(fmt.Sprintf("Invalid type for %s", reflect.TypeOf(fv)), ErrCritical)
 	}
 	return nil
 }

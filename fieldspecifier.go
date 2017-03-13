@@ -21,8 +21,8 @@ type FieldSpecifier struct {
 
 // NewFieldSpecifier returns a Field Specifier. If the Enterprise ID is 0 then the Enterprise Bit will not be set.
 func NewFieldSpecifier(enterpriseid uint32, informationelementid, fieldlength uint16) (*FieldSpecifier, error) {
-	if informationelementid >= 32768 {
-		return &FieldSpecifier{}, fmt.Errorf("Information Element ID can not be greater than 32767, but got %d", informationelementid)
+	if informationelementid > 32767 {
+		return &FieldSpecifier{}, NewError(fmt.Sprintf("Information Element ID can not be greater than 32767, but got %d", informationelementid), ErrCritical)
 	}
 	return &FieldSpecifier{
 		E: (enterpriseid != 0),
@@ -85,7 +85,7 @@ func (fsp *FieldSpecifier) MarshalBinary() (data []byte, err error) {
 // UnmarshalBinary satisfies the encoding/BinaryUnmarshaler interface
 func (fsp *FieldSpecifier) UnmarshalBinary(data []byte) error {
 	if data == nil || len(data) == 0 {
-		return fmt.Errorf("Can not unmarshal, invalid data. %#v", data)
+		return NewError(fmt.Sprintf("Can not unmarshal, invalid data. %#v", data), ErrCritical)
 	}
 	if (data[0] & 128) != 0 {
 		fsp.E = true
