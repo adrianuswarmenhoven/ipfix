@@ -2,6 +2,7 @@
 
 
 [![GoDoc](https://godoc.org/github.com/adrianuswarmenhoven/ipfixmessage?status.svg)](https://godoc.org/github.com/adrianuswarmenhoven/ipfixmessage)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/adrianuswarmenhoven/ipfixmessage/blob/master/LICENSE.md)
 
 Full implementation of IPFIX in Go. RFC7011 and RFC7012 (basiclist, subtemplatelist, subtemplatemultilist)
 
