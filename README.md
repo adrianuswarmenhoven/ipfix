@@ -3,8 +3,13 @@
 
 [![GoDoc](https://godoc.org/github.com/adrianuswarmenhoven/ipfixmessage?status.svg)](https://godoc.org/github.com/adrianuswarmenhoven/ipfixmessage)
 
-An attempt to make as complete as possible the datatypes + methods for an IPFIX message in Go
+Full implementation of IPFIX in Go. RFC7011 and RFC7012 (basiclist, subtemplatelist, subtemplatemultilist)
 
-Focus is on correctness of binary format. Performance and DRY etc. is for later.
+Before compiling, use go generate to pull in some field id's.
 
-### WIP Documentation etc. will be cleaned up.
+Still WIP, but correctly creating and parsing IPFIX messages.
+
+TODO:
+    - Sessions (IPFIX has some knowledge about sessions)
+    - Nice marshalling of structs
+    - Examples
