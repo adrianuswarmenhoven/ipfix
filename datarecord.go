@@ -185,7 +185,6 @@ func (datrec *DataRecord) UnmarshalBinary(data []byte) error {
 	}
 	cursor := 0
 	cnt := 0
-	totallen := 0
 
 	for _, recitem := range curtemplate.FieldSpecifiers {
 		cnt++
@@ -210,7 +209,6 @@ func (datrec *DataRecord) UnmarshalBinary(data []byte) error {
 			if err != nil {
 				return err
 			}
-			totallen += int(recitem.FieldLength)
 			datrec.FieldValues = append(datrec.FieldValues, newval)
 			cursor += int(recitem.FieldLength)
 		} else {
