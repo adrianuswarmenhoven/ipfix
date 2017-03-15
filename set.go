@@ -197,9 +197,11 @@ func (ipfixset *Set) UnmarshalBinary(data []byte) error {
 	cursor := uint16(4)
 
 	for cursor < datalength { //We always need at least 4 bytes to determine Template ID and Field Count
-		if (cursor + recordlength) > datalength { //Must be padding
+		if ((cursor + recordlength) > datalength) ||
+			((cursor+recordlength == datalength) && (bytes.Count(data[cursor:], []byte{0}) == int(recordlength))) { //Must be padding
 			return nil
-		} //Set ID value identifies the Set.  A value of 2 is reserved for the Template Set.  A value of 3 is reserved for the Option Template Set.
+		}
+		//Set ID value identifies the Set.  A value of 2 is reserved for the Template Set.  A value of 3 is reserved for the Option Template Set.
 		//All other values from 4 to 255 are reserved for future use. Values above 255 are used for Data Sets.
 		switch {
 		case ipfixset.SetID == SetIDTemplate, ipfixset.SetID == SetIDOptionTemplate: //We do the template or option template set
@@ -209,6 +211,7 @@ func (ipfixset *Set) UnmarshalBinary(data []byte) error {
 			}
 			err := tmprec.UnmarshalBinary(data[cursor:])
 			if err != nil {
+				fmt.Println("A", err)
 				return err
 			}
 			cursor += tmprec.Len()
@@ -216,10 +219,12 @@ func (ipfixset *Set) UnmarshalBinary(data []byte) error {
 		case ipfixset.SetID > 255: //We do a dataset
 			tmprec, err := NewDataRecord(ipfixset.SetID, ipfixset.AssociatedTemplates)
 			if err != nil {
+				fmt.Println("B", err)
 				return err
 			}
 			err = tmprec.UnmarshalBinary(data[cursor:])
 			if err != nil {
+				fmt.Println("C", err)
 				return err
 			}
 			if !hasvar {

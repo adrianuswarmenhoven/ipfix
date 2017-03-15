@@ -105,8 +105,12 @@ func TestSetWithTemplateRecord(t *testing.T) {
 		fmt.Println(testset)
 	}
 
+	fmt.Println(expectedmarshalresult)
 	umtestset := NewBlankSet()
 	err = umtestset.UnmarshalBinary(expectedmarshalresult)
+	if err != nil {
+		t.Fatalf("Unmarshalling failed:%+v", umtestset, err)
+	}
 	umtestset.Pad(8) //Can not implicitly determine padding boundary
 
 	if fmt.Sprintf("%s", umtestset) != fmt.Sprintf("%s", testset) {
@@ -198,6 +202,9 @@ func TestSetWithOptionsTemplateRecord(t *testing.T) {
 
 	umtestset := NewBlankSet()
 	err = umtestset.UnmarshalBinary(expectedmarshalresult)
+	if err != nil {
+		t.Fatalf("Unmarshalling failed:%+v", err)
+	}
 	umtestset.Pad(8) //Can not implicitly determine padding boundary
 
 	if fmt.Sprintf("%s", umtestset) != fmt.Sprintf("%s", testset) {

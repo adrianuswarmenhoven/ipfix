@@ -186,14 +186,7 @@ func (datrec *DataRecord) UnmarshalBinary(data []byte) error {
 	cursor := 0
 	cnt := 0
 	totallen := 0
-	minrecordlength := uint16(0)
-	for _, fsp := range curtemplate.FieldSpecifiers {
-		if fsp.Len() != VariableLength {
-			minrecordlength += fsp.Len()
-		} else {
-			minrecordlength += 2 //one byte for length, one for value
-		}
-	}
+
 	for _, recitem := range curtemplate.FieldSpecifiers {
 		cnt++
 		newval, suberr := NewFieldValueByID(recitem.EnterpriseNumber, recitem.InformationElementIdentifier)
