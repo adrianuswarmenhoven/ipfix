@@ -1,3 +1,7 @@
+// +build ignore
+
+// This program generates the output for the byterootgeneratedtriesearch.go file to prevent accidents it needs to be redirected.
+//It can be invoked by running go generate
 package main
 
 import (
@@ -15,10 +19,13 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
 	templatefile = "ipfixmessage.go"
+
+	SourceMarker = "//***GENERATEMARKER***"
 )
 
 type fieldvalueelement struct {
@@ -31,6 +38,7 @@ type fieldvalueelement struct {
 }
 
 type templatevariables struct {
+	TimeStamp       time.Time
 	Elements        map[int]map[int]fieldvalueelement
 	EnterpriseOrder sort.IntSlice
 	ElementsOrder   map[int]sort.IntSlice
@@ -65,6 +73,7 @@ func main() {
 	sourcetemplate, err := template.ParseFiles(*input)
 	if err == nil {
 		templatedata := templatevariables{
+			TimeStamp:     time.Now(),
 			Elements:      elementsmap,
 			ElementsOrder: make(map[int]sort.IntSlice),
 			Sources:       sources,
@@ -181,6 +190,10 @@ func main() {
 		source := bytes.Buffer{}
 		err := sourcetemplate.Execute(&source, templatedata)
 		sourceb, err := format.Source(source.Bytes())
+		marker := bytes.Index(sourceb, []byte(SourceMarker))
+		if marker > -1 {
+			sourceb = sourceb[marker+len(SourceMarker)+1:]
+		}
 		if err != nil {
 			fmt.Println(err, string(source.Bytes()))
 		} else {
