@@ -35,10 +35,19 @@ func NewFieldSpecifier(enterpriseid uint32, informationelementid, fieldlength ui
 // String returns the string representation of the Field Specifier
 func (fsp *FieldSpecifier) String() string {
 	retstr := ""
+
 	if fsp.E {
-		retstr = fmt.Sprintf("enterprise bit=yes, enterprise number=%d, information element identifier=%d, field length=%d, ", fsp.EnterpriseNumber, fsp.InformationElementIdentifier, fsp.FieldLength)
+		fd, err := FieldDescriptionByID(fsp.EnterpriseNumber, fsp.InformationElementIdentifier)
+		if err != nil {
+			fd = "unknown"
+		}
+		retstr = fmt.Sprintf("enterprise bit=yes, enterprise number=%d, information element identifier=%d ('%s'), field length=%d, ", fsp.EnterpriseNumber, fsp.InformationElementIdentifier, fd, fsp.FieldLength)
 	} else {
-		retstr = fmt.Sprintf("enterprise bit=no, information element identifier=%d, field length=%d, ", fsp.InformationElementIdentifier, fsp.FieldLength)
+		fd, err := FieldDescriptionByID(0, fsp.InformationElementIdentifier)
+		if err != nil {
+			fd = "unknown"
+		}
+		retstr = fmt.Sprintf("enterprise bit=no, information element identifier=%d ('%s'), field length=%d, ", fsp.InformationElementIdentifier, fd, fsp.FieldLength)
 	}
 	if fsp.FieldLength == VariableLength {
 		return retstr + "variable length=yes"

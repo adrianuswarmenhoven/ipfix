@@ -196,7 +196,7 @@ func (datrec *DataRecord) UnmarshalBinary(data []byte) error {
 	}
 	for _, recitem := range curtemplate.FieldSpecifiers {
 		cnt++
-		newval, suberr := NewFieldValueByID(int(recitem.EnterpriseNumber), int(recitem.InformationElementIdentifier))
+		newval, suberr := NewFieldValueByID(recitem.EnterpriseNumber, recitem.InformationElementIdentifier)
 		if suberr != nil {
 			if err == nil {
 				err = NewError("Sub errors unmarshalling data record.", ErrFailure)

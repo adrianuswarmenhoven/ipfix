@@ -1096,7 +1096,7 @@ func (fv *FieldValueBasicList) UnmarshalBinary(data []byte) error {
 				return err
 			}
 			cursor += int(cursorshift)
-			newval, err := NewFieldValueByID(int(fv.value.EnterpriseNumber), int(fv.value.InformationElementIdentifier))
+			newval, err := NewFieldValueByID(fv.value.EnterpriseNumber, fv.value.InformationElementIdentifier)
 			if err != nil {
 				return err
 			}
@@ -1107,7 +1107,7 @@ func (fv *FieldValueBasicList) UnmarshalBinary(data []byte) error {
 			cursor += int(fieldlength)
 			fv.value.FieldValues = append(fv.value.FieldValues, newval)
 		} else {
-			newval, err := NewFieldValueByID(int(fv.value.EnterpriseNumber), int(fv.value.InformationElementIdentifier))
+			newval, err := NewFieldValueByID(fv.value.EnterpriseNumber, fv.value.InformationElementIdentifier)
 			if err != nil {
 				return err
 			}
