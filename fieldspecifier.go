@@ -1,4 +1,4 @@
-package ipfixmessage
+package ipfix
 
 import (
 	"encoding/binary"

@@ -1,4 +1,4 @@
-package ipfixmessage
+package ipfix
 
 /*
    IPFIX defines three record formats:

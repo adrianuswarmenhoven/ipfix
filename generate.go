@@ -1,4 +1,4 @@
-package ipfixmessage
+package ipfix
 
 //This file only has generate and documentation
 

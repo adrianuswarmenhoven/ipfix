@@ -1,4 +1,4 @@
-package ipfixmessage
+package ipfix
 
 const (
 	testMarkerString = "**************************************************\n* %s\n**************************************************\n"

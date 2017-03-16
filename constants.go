@@ -1,4 +1,4 @@
-package ipfixmessage
+package ipfix
 
 const (
 	// IPFIXVersion denotes the version of Flow Record format exported in this message.
