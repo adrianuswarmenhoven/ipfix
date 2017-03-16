@@ -23,8 +23,6 @@ import (
 )
 
 const (
-	templatefile = "ipfixmessage.go"
-
 	SourceMarker = "//***GENERATEMARKER***"
 )
 
