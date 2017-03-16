@@ -6,7 +6,7 @@
 
 Full implementation of IPFIX in Go. RFC7011 and RFC7012 (basiclist, subtemplatelist, subtemplatemultilist)
 
-Before compiling, use go generate to pull in some field id's.
+Before compiling, use 'go generate' to pull in some field id's.
 
 Still WIP, but correctly creating and parsing IPFIX messages.
 

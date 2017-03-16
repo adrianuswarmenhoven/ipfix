@@ -8,11 +8,11 @@ import (
 )
 
 const (
-	datarecord_test_print = false
+	datarecordTestPrint = false
 )
 
 func TestDataRecordMarker(t *testing.T) {
-	if datarecord_test_print {
+	if datarecordTestPrint {
 		fmt.Printf(testMarkerString, "Data Record")
 	}
 }
@@ -72,21 +72,21 @@ func TestDataRecordBasic(t *testing.T) {
 			t.Errorf(errorPrefixMarker+"Error marshalling %#v: expected %#v, but got %#v", testcase.SourceVal, compval, bindata)
 		}
 	}
-	if datarecord_test_print {
+	if datarecordTestPrint {
 		fmt.Println(dr)
 	}
 	dr2 := &DataRecord{}
 	dr2.AssociateTemplates(sesstmp)
 	dr2.SetTemplateID(257)
 	dr2.UnmarshalBinary(compval)
-	if datarecord_test_print {
+	if datarecordTestPrint {
 		fmt.Println(dr2)
 	}
 	for idx, item := range dr.FieldValues {
 		if fmt.Sprintf("%#v", item.Value()) != fmt.Sprintf("%#v", dr2.FieldValues[idx].Value()) {
 			t.Errorf(errorPrefixMarker+"Error unmarshalling %#v: expected %#v but got %#v", item, item.Value(), dr2.FieldValues[idx].Value())
 		}
-		if datarecord_test_print {
+		if datarecordTestPrint {
 			fmt.Println("------\n", fmt.Sprintf("%#v", item.Value()), "\n", fmt.Sprintf("%#v", dr2.FieldValues[idx].Value()), "\n------")
 		}
 	}

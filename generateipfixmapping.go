@@ -39,6 +39,7 @@ type fieldvalueelement struct {
 
 type templatevariables struct {
 	TimeStamp       time.Time
+	TemplateFile    string
 	Elements        map[int]map[int]fieldvalueelement
 	EnterpriseOrder sort.IntSlice
 	ElementsOrder   map[int]sort.IntSlice
@@ -73,6 +74,7 @@ func main() {
 	sourcetemplate, err := template.ParseFiles(*input)
 	if err == nil {
 		templatedata := templatevariables{
+			TemplateFile:  *input,
 			TimeStamp:     time.Now(),
 			Elements:      elementsmap,
 			ElementsOrder: make(map[int]sort.IntSlice),

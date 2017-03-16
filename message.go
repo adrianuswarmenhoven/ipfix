@@ -65,7 +65,7 @@ func (ipfixmsg *Message) Len() uint16 {
 	return msglen
 }
 
-// SetODID sets the observation domain id on the message.
+// SetObservationDomainID sets the observation domain id on the message.
 // Observation Domain ID: A 32-bit identifier of the Observation Domain that is locally unique to the Exporting Process.
 // The Exporting Process uses the Observation Domain ID to uniquely identify to the Collecting Process the Observation Domain that metered the Flows.
 // It is RECOMMENDED that this identifier also be unique per IPFIX Device.

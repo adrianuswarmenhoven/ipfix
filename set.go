@@ -44,7 +44,7 @@ func NewSet(setid uint16) (*Set, error) {
 	}, nil
 }
 
-// NewSet creates a new IPFIX Set for unmarshalling
+// NewBlankSet creates a new IPFIX Set for unmarshalling
 func NewBlankSet() *Set {
 	return &Set{
 		SetID:   uint16(0),

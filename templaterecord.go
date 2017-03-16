@@ -141,6 +141,7 @@ func (tmplrec *TemplateRecord) Len() uint16 {
      the first N Field Specifiers in the Template Record are Scope
      Fields.  The Scope Field Count MUST NOT be zero.
 */
+
 // MarshalBinary satisfies the encoding/BinaryMarshaler interface
 func (tmplrec *TemplateRecord) MarshalBinary() (data []byte, err error) {
 	if len(tmplrec.FieldSpecifiers) < 1 {

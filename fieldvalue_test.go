@@ -11,38 +11,38 @@ import (
 )
 
 const (
-	fieldvalue_test_print = false
+	fieldvalueTestPrint = false
 )
 
 func TestFieldValueMarker(t *testing.T) {
-	if fieldvalue_test_print {
+	if fieldvalueTestPrint {
 		fmt.Printf(testMarkerString, "FieldValue")
 	}
 }
 
 func TestFieldValueValueGoTypes(t *testing.T) {
 	testsetmatch := map[interface{}]int{
-		FieldValueUnsigned8{}.value:  tg_uint8,
-		FieldValueUnsigned16{}.value: tg_uint16,
-		FieldValueUnsigned32{}.value: tg_uint32,
-		FieldValueUnsigned64{}.value: tg_uint64,
+		FieldValueUnsigned8{}.value:  tgUint8,
+		FieldValueUnsigned16{}.value: tgUint16,
+		FieldValueUnsigned32{}.value: tgUint32,
+		FieldValueUnsigned64{}.value: tgUint64,
 
-		FieldValueSigned8{}.value:  tg_int8,
-		FieldValueSigned16{}.value: tg_int16,
-		FieldValueSigned32{}.value: tg_int32,
-		FieldValueSigned64{}.value: tg_int64,
+		FieldValueSigned8{}.value:  tgInt8,
+		FieldValueSigned16{}.value: tgInt16,
+		FieldValueSigned32{}.value: tgInt32,
+		FieldValueSigned64{}.value: tgInt64,
 
-		FieldValueFloat32{}.value: tg_float32,
-		FieldValueFloat64{}.value: tg_float64,
+		FieldValueFloat32{}.value: tgFloat32,
+		FieldValueFloat64{}.value: tgFloat64,
 
-		FieldValueBoolean{}.value: tg_bool,
+		FieldValueBoolean{}.value: tgBool,
 
-		FieldValueString{}.value: tg_string,
+		FieldValueString{}.value: tgString,
 
-		FieldValueDateTimeSeconds{}.value:      tg_time,
-		FieldValueDateTimeMilliseconds{}.value: tg_time,
-		FieldValueDateTimeMicroseconds{}.value: tg_time,
-		FieldValueDateTimeNanoseconds{}.value:  tg_time,
+		FieldValueDateTimeSeconds{}.value:      tgTime,
+		FieldValueDateTimeMilliseconds{}.value: tgTime,
+		FieldValueDateTimeMicroseconds{}.value: tgTime,
+		FieldValueDateTimeNanoseconds{}.value:  tgTime,
 	}
 	for testval, checkval := range testsetmatch {
 		if goTypeName(testval) != checkval {
@@ -114,19 +114,19 @@ var (
 	}
 
 	testSubTemplateListTemplates = map[uint16]*ActiveTemplate{
-		257: &ActiveTemplate{
+		257: {
 			Added:     time.Now(),
 			NofAccess: 0,
 			Record: &TemplateRecord{
 				TemplateID: 257,
 				FieldSpecifiers: []*FieldSpecifier{
-					0: &FieldSpecifier{
+					0: {
 						E: false,
 						InformationElementIdentifier: 12,
 						EnterpriseNumber:             0,
 						FieldLength:                  4,
 					},
-					1: &FieldSpecifier{
+					1: {
 						E: true,
 						InformationElementIdentifier: 11,
 						EnterpriseNumber:             44913,
@@ -135,19 +135,19 @@ var (
 				},
 			},
 		},
-		258: &ActiveTemplate{
+		258: {
 			Added:     time.Now(),
 			NofAccess: 0,
 			Record: &TemplateRecord{
 				TemplateID: 258,
 				FieldSpecifiers: []*FieldSpecifier{
-					0: &FieldSpecifier{
+					0: {
 						E: false,
 						InformationElementIdentifier: 20,
 						EnterpriseNumber:             44913,
 						FieldLength:                  VariableLength,
 					},
-					1: &FieldSpecifier{
+					1: {
 						E: true,
 						InformationElementIdentifier: 21,
 						EnterpriseNumber:             44913,
@@ -464,7 +464,7 @@ func TestFieldValueMarshalUnmarshal(t *testing.T) {
 		if !reflect.DeepEqual(testcase.SourceVal, testcase.DestVal) || !reflect.DeepEqual(testcase.DestVal.Value(), testcase.CompVal) {
 			t.Errorf(errorPrefixMarker+"Error in value after conversions, wanted %#v (%#v), but got %#v", testcase.SourceVal, testcase.CompVal, testcase.DestVal)
 		}
-		if fieldvalue_test_print && testcase.SourceVal.Len() < 12 {
+		if fieldvalueTestPrint && testcase.SourceVal.Len() < 12 {
 			fmt.Println(testcase.SourceVal.Value(), testcase.DestVal.Value(), testcase.CompVal)
 		}
 	}
@@ -514,14 +514,14 @@ func TestFieldValueMarshalUnmarshalSubTemplateList(t *testing.T) {
 		if err != nil {
 			t.Errorf(errorPrefixMarker+"Error marshalling %#v: %#v", testcase.SourceVal, err)
 		}
-		if fieldvalue_test_print {
+		if fieldvalueTestPrint {
 			fmt.Println(binarydata)
 		}
 		if len(binarydata) != int(testcase.SourceVal.Len()) {
 			t.Errorf(errorPrefixMarker+"Error marshalling %#v: length of binary data should be %d, but was %d", testcase.SourceVal, testcase.SourceVal.Len(), len(binarydata))
 		}
 		err = testcase.DestVal.UnmarshalBinary(binarydata)
-		if fieldvalue_test_print {
+		if fieldvalueTestPrint {
 			fmt.Println(fmt.Sprintf("%#v", testcase.DestVal))
 
 			for recidx, rec := range testcase.DestVal.Value().(SubTemplateList).Records {
@@ -535,7 +535,7 @@ func TestFieldValueMarshalUnmarshalSubTemplateList(t *testing.T) {
 			t.Errorf(errorPrefixMarker+"Error unmarshalling %#v: %#v", testcase.SourceVal, err)
 		}
 		compbinarydata, err := testcase.DestVal.MarshalBinary()
-		if fieldvalue_test_print {
+		if fieldvalueTestPrint {
 			fmt.Println(compbinarydata)
 		}
 		if err != nil {
@@ -554,39 +554,39 @@ func TestFieldValueMarshalUnmarshalSubTemplateList(t *testing.T) {
 func goTypeName(fv interface{}) int {
 	switch fv.(type) {
 	case uint8:
-		return tg_uint8
+		return tgUint8
 	case uint16:
-		return tg_uint16
+		return tgUint16
 	case uint32:
-		return tg_uint32
+		return tgUint32
 	case uint64:
-		return tg_uint64
+		return tgUint64
 	case int8:
-		return tg_int8
+		return tgInt8
 	case int16:
-		return tg_int16
+		return tgInt16
 	case int32:
-		return tg_int32
+		return tgInt32
 	case int64:
-		return tg_int64
+		return tgInt64
 	case float32:
-		return tg_float32
+		return tgFloat32
 	case float64:
-		return tg_float64
+		return tgFloat64
 	case bool:
-		return tg_bool
+		return tgBool
 	case net.HardwareAddr:
-		return tg_mac
+		return tgMAC
 	case []byte:
-		return tg_byteslice
+		return tgByteslice
 	case string:
-		return tg_string
+		return tgString
 	case time.Time:
-		return tg_time
+		return tgTime
 	case net.IP:
-		return tg_ipaddress
+		return tgIPAddress
 	default:
-		return t_unknown
+		return tUnknown
 	}
 }
 

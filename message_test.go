@@ -7,13 +7,13 @@ import (
 )
 
 func TestMessageMarker(t *testing.T) {
-	if ipfixset_test_print {
+	if ipfixsetTestPrint {
 		fmt.Printf(testMarkerString, "Message")
 	}
 }
 
 func TestEmptyMessage(t *testing.T) {
-	if ipfixset_test_print {
+	if ipfixsetTestPrint {
 		fmt.Println("--- EMPTY MESSAGE ---")
 	}
 	testmessage, err := NewMessage()
@@ -33,7 +33,7 @@ func TestEmptyMessage(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if ipfixset_test_print {
+	if ipfixsetTestPrint {
 		fmt.Println(testmessage.MarshalBinary())
 	}
 
@@ -66,7 +66,7 @@ func TestEmptyMessage(t *testing.T) {
 }
 
 func TestMessageSingleSet(t *testing.T) {
-	if ipfixset_test_print {
+	if ipfixsetTestPrint {
 		fmt.Println("--- MESSAGE SINGLE SET ---")
 	}
 	testmessage, err := NewMessage()
@@ -135,7 +135,7 @@ func TestMessageSingleSet(t *testing.T) {
 
 	testmessage.Sets = append(testmessage.Sets, testset)
 
-	if ipfixset_test_print {
+	if ipfixsetTestPrint {
 		fmt.Println(testmessage.MarshalBinary())
 	}
 
@@ -162,13 +162,13 @@ func TestMessageSingleSet(t *testing.T) {
 		t.Fatalf("Error unmarshalling message. Expected '%+v' but got '%+v'", fmt.Sprintf("%+v", testmessage), fmt.Sprintf("%+v", receivermessage))
 	}
 
-	if ipfixset_test_print {
+	if ipfixsetTestPrint {
 		fmt.Println(receivermessage.AssociatedTemplates.Get(1010))
 	}
 }
 
 func TestMessageDataSet(t *testing.T) {
-	if ipfixset_test_print {
+	if ipfixsetTestPrint {
 		fmt.Println("--- MESSAGE DATA SET ---")
 	}
 	//First test that we should get an error marshalling when we do not have the correct template
@@ -215,7 +215,7 @@ func TestMessageDataSet(t *testing.T) {
 	if err == nil {
 		t.Fatalf("Should have gotten error marshalling datarecords without proper template")
 	}
-	if ipfixset_test_print {
+	if ipfixsetTestPrint {
 		fmt.Println(testmessagenotmpl.MarshalBinary())
 	}
 
@@ -280,7 +280,7 @@ func TestMessageDataSet(t *testing.T) {
 
 	//	_, err = testmessagenotmpl.MarshalBinary()
 
-	if ipfixset_test_print {
+	if ipfixsetTestPrint {
 		fmt.Println(testmessage.MarshalBinary())
 	}
 
@@ -306,14 +306,14 @@ func TestMessageDataSet(t *testing.T) {
 		t.Fatalf("Error unmarshalling message. Expected '%+v' but got '%+v'", fmt.Sprintf("%+v", testmessage), fmt.Sprintf("%+v", receivermessage))
 	}
 
-	if ipfixset_test_print {
+	if ipfixsetTestPrint {
 		fmt.Println(receivermessage)
 	}
 
 }
 
 func TestMessageInterleavedSet(t *testing.T) {
-	if ipfixset_test_print {
+	if ipfixsetTestPrint {
 		fmt.Println("--- MESSAGE INTERLEAVED SET ---")
 	}
 	testmessage, err := NewMessage()
@@ -437,7 +437,7 @@ func TestMessageInterleavedSet(t *testing.T) {
 
 	//	_, err = testmessagenotmpl.MarshalBinary()
 
-	if ipfixset_test_print {
+	if ipfixsetTestPrint {
 		fmt.Println(testmessage.MarshalBinary())
 	}
 
@@ -463,7 +463,7 @@ func TestMessageInterleavedSet(t *testing.T) {
 		t.Fatalf("Error unmarshalling message. Expected '%+v' but got '%+v'", fmt.Sprintf("%+v", testmessage), fmt.Sprintf("%+v", receivermessage))
 	}
 
-	if ipfixset_test_print {
+	if ipfixsetTestPrint {
 		fmt.Println(receivermessage)
 	}
 

@@ -6,11 +6,11 @@ import (
 )
 
 const (
-	activetemplatelist_test_print = false
+	activetemplatelistTestPrint = false
 )
 
 func TestTemplateListMarker(t *testing.T) {
-	if activetemplatelist_test_print {
+	if activetemplatelistTestPrint {
 		fmt.Printf(testMarkerString, "Template List")
 	}
 }

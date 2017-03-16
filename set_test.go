@@ -6,17 +6,17 @@ import (
 )
 
 const (
-	ipfixset_test_print = true
+	ipfixsetTestPrint = false
 )
 
 func TestSetMarker(t *testing.T) {
-	if ipfixset_test_print {
+	if ipfixsetTestPrint {
 		fmt.Printf(testMarkerString, "Set")
 	}
 }
 
 func TestEmptySet(t *testing.T) {
-	if ipfixset_test_print {
+	if ipfixsetTestPrint {
 		fmt.Println("--- EMPTY SET ---")
 	}
 	testset, err := NewSet(0)
@@ -37,14 +37,14 @@ func TestEmptySet(t *testing.T) {
 		t.Fatalf("New IPFIX Set creation failed: %#v", err)
 	}
 
-	if ipfixset_test_print {
+	if ipfixsetTestPrint {
 		fmt.Println(testset.MarshalBinary())
 	}
 
 }
 
 func TestSetWithTemplateRecord(t *testing.T) {
-	if ipfixset_test_print {
+	if ipfixsetTestPrint {
 		fmt.Println("--- TEMPLATE RECORD SET ---")
 	}
 	testset, err := NewSet(SetIDTemplate)
@@ -101,11 +101,10 @@ func TestSetWithTemplateRecord(t *testing.T) {
 	if fmt.Sprintf("%+v", data) != fmt.Sprintf("%+v", expectedmarshalresult) {
 		t.Fatalf("Marshalling failed. Expected \n%+v but got \n%+v", expectedmarshalresult, data)
 	}
-	if ipfixset_test_print {
+	if ipfixsetTestPrint {
 		fmt.Println(testset)
 	}
 
-	fmt.Println(expectedmarshalresult)
 	umtestset := NewBlankSet()
 	err = umtestset.UnmarshalBinary(expectedmarshalresult)
 	if err != nil {
@@ -119,7 +118,7 @@ func TestSetWithTemplateRecord(t *testing.T) {
 }
 
 func TestSetWithOptionsTemplateRecord(t *testing.T) {
-	if ipfixset_test_print {
+	if ipfixsetTestPrint {
 		fmt.Println("--- OPTIONS TEMPLATE SET ---")
 	}
 	testset, err := NewSet(SetIDOptionTemplate)
@@ -196,7 +195,7 @@ func TestSetWithOptionsTemplateRecord(t *testing.T) {
 	if fmt.Sprintf("%+v", data) != fmt.Sprintf("%+v", expectedmarshalresult) {
 		t.Fatalf("Marshalling failed. Expected \n%+v but got \n%+v", expectedmarshalresult, data)
 	}
-	if ipfixset_test_print {
+	if ipfixsetTestPrint {
 		fmt.Println(testset)
 	}
 
@@ -214,7 +213,7 @@ func TestSetWithOptionsTemplateRecord(t *testing.T) {
 }
 
 func TestSetWithDataRecord(t *testing.T) {
-	if ipfixset_test_print {
+	if ipfixsetTestPrint {
 		fmt.Println("--- DATA RECORD SET ---")
 	}
 	testset, err := NewSet(257)
@@ -271,7 +270,7 @@ func TestSetWithDataRecord(t *testing.T) {
 	}
 
 	testset.Pad(7)
-	if ipfixset_test_print {
+	if ipfixsetTestPrint {
 		fmt.Println(testset, testset.Len())
 	}
 
@@ -279,7 +278,7 @@ func TestSetWithDataRecord(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Marshalling set failed: %#v", err)
 	}
-	if ipfixset_test_print {
+	if ipfixsetTestPrint {
 		fmt.Println(data)
 	}
 
@@ -291,7 +290,7 @@ func TestSetWithDataRecord(t *testing.T) {
 	}
 	umtestset.Pad(7) //Can not implicitly determine padding boundary
 
-	if ipfixset_test_print {
+	if ipfixsetTestPrint {
 		fmt.Println(umtestset, err)
 	}
 

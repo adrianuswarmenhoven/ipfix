@@ -7,4 +7,4 @@ package ipfixmessage
 //https://www.ietf.org/assignments/ipfix/ipfix.xml
 //https://raw.githubusercontent.com/SecDorks/ipfixcol/master/base/config/ipfix-elements.xml
 //https://raw.githubusercontent.com/CESNET/ipfixcol/master/base/config/ipfix-elements.xml
-//go:generate go run generateipfixmapping.go -i ipfixidmapping_template.go -o ipfixidmapping.go
+//go:generate go run generateipfixmapping.go -i ipfixidmapping_template.gotpl -o ipfixidmapping.go

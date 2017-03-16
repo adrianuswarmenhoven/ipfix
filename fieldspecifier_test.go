@@ -7,11 +7,11 @@ import (
 )
 
 const (
-	fieldspecifier_test_print = false
+	fieldspecifierTestPrint = false
 )
 
 func TestFieldSpecifierMarker(t *testing.T) {
-	if fieldspecifier_test_print {
+	if fieldspecifierTestPrint {
 		fmt.Printf(testMarkerString, "Field Specifier")
 	}
 }
