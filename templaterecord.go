@@ -95,21 +95,10 @@ func getFieldSpecifierFromValue(value reflect.Value, tags []string) *FieldSpecif
 	if value.Type().Kind() == reflect.Struct {
 		fmt.Println("str")
 		for i := 0; i < value.NumField(); i++ { // iterates through every struct type field
-			getFieldSpecifierFromValue(value.Field(i), strings.Split(value.Type().Field(0).Tag.Get("ipfix"), ","))
+			getFieldSpecifierFromValue(value.Field(i), strings.Split(value.Type().Field(i).Tag.Get("ipfix"), ","))
 		}
 	}
 
-	/*	tags := strings.Split(value.Type().Field(0).Tag.Get("ipfix"), ",")
-		for _, tag := range tags {
-			kv := strings.SplitN(tag, ":", 2)
-			if len(kv) > 1 {
-				fmt.Println(kv[0], " -> ", kv[1])
-			} else {
-				fmt.Println("'", kv[0], "'")
-			}
-		}
-	*/
-	//		switch tag.Get("check") {
 	return nil
 }
 
