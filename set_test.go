@@ -108,7 +108,7 @@ func TestSetWithTemplateRecord(t *testing.T) {
 	umtestset := NewBlankSet()
 	err = umtestset.UnmarshalBinary(expectedmarshalresult)
 	if err != nil {
-		t.Fatalf("Unmarshalling failed:%+v", umtestset, err)
+		t.Fatalf("Unmarshalling failed:%+v %+v", umtestset, err)
 	}
 	umtestset.Pad(8) //Can not implicitly determine padding boundary
 
