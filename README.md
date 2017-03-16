@@ -1,6 +1,7 @@
 # ipfixmessage
 
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/adrianuswarmenhoven/ipfixmessage)](https://goreportcard.com/report/github.com/adrianuswarmenhoven/ipfixmessage)
 [![GoDoc](https://godoc.org/github.com/adrianuswarmenhoven/ipfixmessage?status.svg)](https://godoc.org/github.com/adrianuswarmenhoven/ipfixmessage)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/adrianuswarmenhoven/ipfixmessage/blob/master/LICENSE.md)
 
