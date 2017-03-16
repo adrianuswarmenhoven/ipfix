@@ -77,16 +77,21 @@ func RegisterTemplateRecord(templateid uint16, val interface{}) (*TemplateRecord
 	if err != nil {
 		return nil, err
 	}
+
 	//Must check if it is a struct!!
 	value := reflect.ValueOf(val)
+	if value.Type().Kind() != reflect.Struct {
+		return nil, NewError("Can not create a record from a single value. Must use struct.", ErrCritical)
+	}
 	for i := 0; i < value.NumField(); i++ { // iterates through every struct type field
 		getFieldSpecifierFromValue(value.Field(i), strings.Split(value.Type().Field(i).Tag.Get("ipfix"), ","))
 	}
 
 	return templaterecord, nil
 }
+
 BOOKMARK
-func getFieldSpecifierFromValue(value reflect.Value, tags []string) *FieldSpecifier {
+func getFieldSpecifierFromValue(value reflect.Value, tags []string) (*FieldSpecifier, error) {
 	//enterpriseid := 0
 	//fieldid := 0
 	//fieldlen := 0
@@ -99,7 +104,7 @@ func getFieldSpecifierFromValue(value reflect.Value, tags []string) *FieldSpecif
 		}
 	}
 
-	return nil
+	return nil, nil
 }
 
 // String returns the string representation of the Template Record
