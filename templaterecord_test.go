@@ -2,6 +2,7 @@ package ipfix
 
 import (
 	"fmt"
+	"net"
 	"testing"
 )
 
@@ -136,4 +137,26 @@ func TestOptionsTemplateRecordBasic(t *testing.T) {
 	if templaterecordTestPrint {
 		fmt.Println(tr2)
 	}
+}
+
+func TestRegisterTemplate(t *testing.T) {
+	type substruct struct {
+		port  uint32 `ipfix:"plaap"`
+		value string
+	}
+	type simplestruct struct {
+		sourceip   net.IP `ipfix:"e:44913,id:14,len:4,someflag"`
+		sourceport uint16 `ipfix:"id:12"`
+		basiclist  []string
+		subthing   substruct
+	}
+	_, err := RegisterTemplateRecord(10, simplestruct{})
+	if err == nil {
+		t.Errorf(errorPrefixMarker + "Error registering New Template Record. Should have gotten error, but got nil.")
+	}
+	tmpl, err := RegisterTemplateRecord(257, simplestruct{})
+	if err != nil {
+		t.Errorf(errorPrefixMarker+"Error registering New Template Record: %+v", err)
+	}
+	tmpl = tmpl
 }

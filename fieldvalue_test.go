@@ -113,7 +113,7 @@ var (
 		},
 	}
 
-	testSubTemplateListTemplates = map[uint16]*ActiveTemplate{
+	testSubTemplateListTemplates = map[uint16]*activeTemplate{
 		257: {
 			Added:     time.Now(),
 			NofAccess: 0,
@@ -161,7 +161,7 @@ var (
 	subTemplateListA = SubTemplateList{
 		Semantic:            OneOrMoreOf,
 		TemplateID:          257,
-		AssociatedTemplates: &ActiveTemplates{Template: testSubTemplateListTemplates},
+		AssociatedTemplates: &ActiveTemplates{templates: testSubTemplateListTemplates},
 		Records: []Record{
 			0: &DataRecord{
 				FieldValues: []FieldValue{
@@ -175,7 +175,7 @@ var (
 	subTemplateListB = SubTemplateList{
 		Semantic:            OneOrMoreOf,
 		TemplateID:          257,
-		AssociatedTemplates: &ActiveTemplates{Template: testSubTemplateListTemplates},
+		AssociatedTemplates: &ActiveTemplates{templates: testSubTemplateListTemplates},
 		Records: []Record{
 			0: &DataRecord{
 				FieldValues: []FieldValue{
@@ -195,7 +195,7 @@ var (
 	subTemplateListC = SubTemplateList{
 		Semantic:            AllOf,
 		TemplateID:          258,
-		AssociatedTemplates: &ActiveTemplates{Template: testSubTemplateListTemplates},
+		AssociatedTemplates: &ActiveTemplates{templates: testSubTemplateListTemplates},
 		Records: []Record{
 			0: &DataRecord{
 				FieldValues: []FieldValue{
@@ -505,9 +505,9 @@ func TestFieldValueMarshalUnmarshalBasicList(t *testing.T) {
 
 func TestFieldValueMarshalUnmarshalSubTemplateList(t *testing.T) {
 	var testset = []fieldvalueMarshalUnmarshalTestcase{
-		0: {SourceVal: &FieldValueSubTemplateList{value: subTemplateListA}, DestVal: &FieldValueSubTemplateList{value: SubTemplateList{TemplateID: 257, AssociatedTemplates: &ActiveTemplates{Template: testSubTemplateListTemplates}}}, CompVal: []byte{2, 1, 1, 127, 0, 0, 1, 8, 8, 8, 8}},
-		1: {SourceVal: &FieldValueSubTemplateList{value: subTemplateListB}, DestVal: &FieldValueSubTemplateList{value: SubTemplateList{TemplateID: 257, AssociatedTemplates: &ActiveTemplates{Template: testSubTemplateListTemplates}}}, CompVal: []byte{2, 1, 1, 127, 0, 0, 1, 8, 8, 8, 8, 4, 4, 4, 4, 192, 168, 172, 16}},
-		2: {SourceVal: &FieldValueSubTemplateList{value: subTemplateListC}, DestVal: &FieldValueSubTemplateList{value: SubTemplateList{TemplateID: 258, AssociatedTemplates: &ActiveTemplates{Template: testSubTemplateListTemplates}}}, CompVal: []byte{3, 1, 2, 14, 119, 119, 119, 46, 103, 111, 111, 103, 108, 101, 46, 99, 111, 109, 5, 47, 97, 112, 112, 115, 14, 116, 111, 111, 108, 115, 46, 105, 101, 116, 102, 46, 111, 114, 103, 16, 47, 114, 102, 99, 47, 114, 102, 99, 54, 51, 49, 51, 46, 116, 120, 116}},
+		0: {SourceVal: &FieldValueSubTemplateList{value: subTemplateListA}, DestVal: &FieldValueSubTemplateList{value: SubTemplateList{TemplateID: 257, AssociatedTemplates: &ActiveTemplates{templates: testSubTemplateListTemplates}}}, CompVal: []byte{2, 1, 1, 127, 0, 0, 1, 8, 8, 8, 8}},
+		1: {SourceVal: &FieldValueSubTemplateList{value: subTemplateListB}, DestVal: &FieldValueSubTemplateList{value: SubTemplateList{TemplateID: 257, AssociatedTemplates: &ActiveTemplates{templates: testSubTemplateListTemplates}}}, CompVal: []byte{2, 1, 1, 127, 0, 0, 1, 8, 8, 8, 8, 4, 4, 4, 4, 192, 168, 172, 16}},
+		2: {SourceVal: &FieldValueSubTemplateList{value: subTemplateListC}, DestVal: &FieldValueSubTemplateList{value: SubTemplateList{TemplateID: 258, AssociatedTemplates: &ActiveTemplates{templates: testSubTemplateListTemplates}}}, CompVal: []byte{3, 1, 2, 14, 119, 119, 119, 46, 103, 111, 111, 103, 108, 101, 46, 99, 111, 109, 5, 47, 97, 112, 112, 115, 14, 116, 111, 111, 108, 115, 46, 105, 101, 116, 102, 46, 111, 114, 103, 16, 47, 114, 102, 99, 47, 114, 102, 99, 54, 51, 49, 51, 46, 116, 120, 116}},
 	}
 	for _, testcase := range testset {
 		binarydata, err := testcase.SourceVal.MarshalBinary()

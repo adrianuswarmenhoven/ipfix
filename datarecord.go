@@ -38,12 +38,16 @@ func (datrec *DataRecord) AddFieldValue(fieldvalue FieldValue) error {
 		datrec.FieldValues = append(datrec.FieldValues, fieldvalue)
 		return nil
 	}
-	if len(datrec.FieldValues) >= (len(datrec.AssociatedTemplates.Template[datrec.TemplateID].Record.FieldSpecifiers) + len(datrec.AssociatedTemplates.Template[datrec.TemplateID].Record.ScopeFieldSpecifiers)) {
-		return NewError(fmt.Sprintf("Too many field values in record. Should only have %d", (len(datrec.AssociatedTemplates.Template[datrec.TemplateID].Record.FieldSpecifiers)+len(datrec.AssociatedTemplates.Template[datrec.TemplateID].Record.ScopeFieldSpecifiers))), ErrCritical)
+	associatedTemplate, err := datrec.AssociatedTemplates.Get(datrec.TemplateID)
+	if err != nil {
+		return err
 	}
-	if datrec.AssociatedTemplates.Template[datrec.TemplateID].Record.FieldSpecifiers[len(datrec.FieldValues)].FieldLength != fieldvalue.Len() &&
-		datrec.AssociatedTemplates.Template[datrec.TemplateID].Record.FieldSpecifiers[len(datrec.FieldValues)].FieldLength != VariableLength {
-		return NewError(fmt.Sprintf("Field value has incorrect octet length. Expected %d, but got %d", datrec.AssociatedTemplates.Template[datrec.TemplateID].Record.FieldSpecifiers[len(datrec.FieldValues)].FieldLength, fieldvalue.Len()), ErrCritical)
+	if len(datrec.FieldValues) >= (len(associatedTemplate.FieldSpecifiers) + len(associatedTemplate.ScopeFieldSpecifiers)) {
+		return NewError(fmt.Sprintf("Too many field values in record. Should only have %d", (len(associatedTemplate.FieldSpecifiers)+len(associatedTemplate.ScopeFieldSpecifiers))), ErrCritical)
+	}
+	if associatedTemplate.FieldSpecifiers[len(datrec.FieldValues)].FieldLength != fieldvalue.Len() &&
+		associatedTemplate.FieldSpecifiers[len(datrec.FieldValues)].FieldLength != VariableLength {
+		return NewError(fmt.Sprintf("Field value has incorrect octet length. Expected %d, but got %d", associatedTemplate.FieldSpecifiers[len(datrec.FieldValues)].FieldLength, fieldvalue.Len()), ErrCritical)
 	}
 	datrec.FieldValues = append(datrec.FieldValues, fieldvalue)
 	return nil

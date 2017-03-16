@@ -1,6 +1,9 @@
 package ipfix
 
 type Session struct {
+
+	//AssociatedTemplates Templates points to the list of active templates. Without a template record a data record can not be encoded or decoded
+	AssociatedTemplates *ActiveTemplates
 }
 
 /*

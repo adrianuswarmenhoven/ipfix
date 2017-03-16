@@ -3,6 +3,8 @@ package ipfix
 import (
 	"encoding/binary"
 	"fmt"
+	"reflect"
+	"strings"
 )
 
 /*
@@ -55,19 +57,60 @@ func NewTemplateRecord(templateid uint16) (*TemplateRecord, error) {
 // NewOptionsTemplateRecord returns a new *TemplateRecord that has the given templateid, 0 Scope Field Specifiers and 0 Field Specifiers.
 // Note that templateid *must* be between a number in the range 256-65535, else an error is returned.
 func NewOptionsTemplateRecord(templateid uint16) (*TemplateRecord, error) {
-	if templateid < 256 {
-		return nil, fmt.Errorf("Invalid template id. Must be >=256 but got %d", templateid)
+	templaterecord, err := NewTemplateRecord(templateid)
+	if err != nil {
+		return nil, err
 	}
-	return &TemplateRecord{
-		TemplateID:           templateid,
-		ScopeFieldSpecifiers: make([]*FieldSpecifier, 0, 0),
-		FieldSpecifiers:      make([]*FieldSpecifier, 0, 0),
-	}, nil
+	templaterecord.ScopeFieldSpecifiers = make([]*FieldSpecifier, 0, 0)
+	return templaterecord, nil
 }
 
 // IsOptionsTemplateRecord returns true if the template record is an Options Template Record
 func (tmplrec *TemplateRecord) IsOptionsTemplateRecord() bool {
 	return tmplrec.ScopeFieldSpecifiers == nil
+}
+
+//RegisterTemplateRecord creates a new templaterecord from a struct using the tags.
+//This will be hell to make for basiclist etc... but hey.... want to be complete
+func RegisterTemplateRecord(templateid uint16, val interface{}) (*TemplateRecord, error) {
+	templaterecord, err := NewTemplateRecord(templateid)
+	if err != nil {
+		return nil, err
+	}
+	//Must check if it is a struct!!
+	value := reflect.ValueOf(val)
+	for i := 0; i < value.NumField(); i++ { // iterates through every struct type field
+		getFieldSpecifierFromValue(value.Field(i), strings.Split(value.Type().Field(i).Tag.Get("ipfix"), ","))
+	}
+
+	return templaterecord, nil
+}
+BOOKMARK
+func getFieldSpecifierFromValue(value reflect.Value, tags []string) *FieldSpecifier {
+	//enterpriseid := 0
+	//fieldid := 0
+	//fieldlen := 0
+
+	fmt.Println(value.Type().Kind(), tags)
+	if value.Type().Kind() == reflect.Struct {
+		fmt.Println("str")
+		for i := 0; i < value.NumField(); i++ { // iterates through every struct type field
+			getFieldSpecifierFromValue(value.Field(i), strings.Split(value.Type().Field(0).Tag.Get("ipfix"), ","))
+		}
+	}
+
+	/*	tags := strings.Split(value.Type().Field(0).Tag.Get("ipfix"), ",")
+		for _, tag := range tags {
+			kv := strings.SplitN(tag, ":", 2)
+			if len(kv) > 1 {
+				fmt.Println(kv[0], " -> ", kv[1])
+			} else {
+				fmt.Println("'", kv[0], "'")
+			}
+		}
+	*/
+	//		switch tag.Get("check") {
+	return nil
 }
 
 // String returns the string representation of the Template Record
