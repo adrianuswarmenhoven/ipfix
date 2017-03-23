@@ -141,22 +141,25 @@ func TestOptionsTemplateRecordBasic(t *testing.T) {
 
 func TestRegisterTemplate(t *testing.T) {
 	type substruct struct {
-		port  uint32 `ipfix:"plaap"`
+		port  uint32 `ipfix:"substructplaap"`
 		value string
 	}
 	type simplestruct struct {
-		sourceip   net.IP `ipfix:"e:44913,id:14,len:4,someflag"`
-		sourceport uint16 `ipfix:"id:12"`
-		basiclist  []string
-		subthing   substruct
+		sourceip   net.IP    `ipfix:"e:44913,id:14,len:4,someflag,somemalformed:v:a:lue"`
+		sourceport uint16    `ipfix:"e:42,id:12,type:unsigned16,len:2,desc:Some field specific to us"`
+		basiclist  []string  `ipfix:"e:101,id:100,type:octetarray,len:65535,desc:dnsresolver"`
+		ignored    string    //This should be ignored
+		subthing   substruct `ipfix:"e:1020,id:101,type:subtemplatelist,subtemplateid:500,desc:A subtemplatelist"`
 	}
-	_, err := RegisterTemplateRecord(10, simplestruct{})
+	_, err := RegisterTemplateRecord(nil, 10, simplestruct{})
 	if err == nil {
 		t.Errorf(errorPrefixMarker + "Error registering New Template Record. Should have gotten error, but got nil.")
 	}
-	tmpl, err := RegisterTemplateRecord(257, simplestruct{})
+	tmpl, err := RegisterTemplateRecord(nil, 257, simplestruct{})
 	if err != nil {
 		t.Errorf(errorPrefixMarker+"Error registering New Template Record: %+v", err)
 	}
-	tmpl = tmpl
+	if tmpl == nil {
+		fmt.Println("ok")
+	}
 }

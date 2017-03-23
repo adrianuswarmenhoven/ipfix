@@ -13,6 +13,7 @@ package ipfix
 import (
 	"fmt"
 	"sync"
+	"strings"
 )
 
 var(
@@ -149,6 +150,29 @@ case {{$enterpriseid}}: // {{index $.Sources $enterpriseid}}
     return "",nil
 }
 
+// fieldInstanceExists returns whether a specific field already exists (first bool) and whether it is a custom field or not (second bool)
+func fieldInstanceExists(enterpriseid uint32, elementid uint16) (bool,bool) {
+	switch enterpriseid {
+{{range $_, $enterpriseid := .EnterpriseOrder}}
+case {{$enterpriseid}}: // {{index $.Sources $enterpriseid}}
+{{$elements := (index $.Elements $enterpriseid)}}
+    switch elementid { {{range $_, $elementid:= (index $.ElementsOrder $enterpriseid)}}
+        case {{$elementid}}:
+        return true, false{{end}}
+        default:
+           return false,false
+    }
+{{end}}
+	default://Checking if we registered any custom elements
+	    _,err:=GetCustomField(enterpriseid,elementid)
+		if err!=nil{
+			return false,false
+		}
+	 	return true,true
+	}
+    return false,false
+}
+
 
 //getNewFieldValue returns a new empty FieldValue based on the FieldValue provided.
 //This is so the same pointer does not get re-used
@@ -212,4 +236,68 @@ func getNewFieldValue(val interface{})(FieldValue,error){
 						return &FieldValueSubTemplateMultiList{},nil
 					}
  		return nil,NewError(fmt.Sprintf("Unknown field value %#v.",val),ErrCritical)					
+}
+
+//getNewFieldValue returns a new empty FieldValue based on the string.
+//The string is one of the values from https://www.iana.org/assignments/ipfix/ipfix.xhtml#ipfix-information-element-data-types
+func getNewFieldValueByString(val string) (FieldValue, error) {
+	switch strings.ToLower(val) {
+	case "unsigned8":
+		return &FieldValueUnsigned8{}, nil
+	case "unsigned16":
+		return &FieldValueUnsigned16{}, nil
+	case "unsigned32":
+		return &FieldValueUnsigned32{}, nil
+	case "unsigned64":
+		return &FieldValueUnsigned64{}, nil
+
+	case "signed8":
+		return &FieldValueSigned8{}, nil
+	case "signed16":
+		return &FieldValueSigned16{}, nil
+	case "signed32":
+		return &FieldValueSigned32{}, nil
+	case "signed64":
+		return &FieldValueSigned64{}, nil
+
+	case "float32":
+		return &FieldValueFloat32{}, nil
+	case "float64":
+		return &FieldValueFloat64{}, nil
+
+	case "boolean":
+		return &FieldValueBoolean{}, nil
+
+	case "macaddress":
+		return &FieldValueMacAddress{}, nil
+
+	case "octetarray":
+		return &FieldValueOctetArray{}, nil
+
+	case "string":
+		return &FieldValueString{}, nil
+
+	case "datetimeseconds":
+		return &FieldValueDateTimeSeconds{}, nil
+	case "datetimemilliseconds":
+		return &FieldValueDateTimeMilliseconds{}, nil
+	case "datetimemicroseconds":
+		return &FieldValueDateTimeMicroseconds{}, nil
+	case "datetimenanoseconds":
+		return &FieldValueDateTimeNanoseconds{}, nil
+
+	case "ipv4address":
+		return &FieldValueIPv4Address{}, nil
+	case "ipv6address":
+		return &FieldValueIPv6Address{}, nil
+
+	case "basiclist":
+		return &FieldValueBasicList{}, nil
+
+	case "subtemplatelist":
+		return &FieldValueSubTemplateList{}, nil
+	case "subtemplatemultilist":
+		return &FieldValueSubTemplateMultiList{}, nil
+	}
+	return nil, NewError(fmt.Sprintf("Unknown field value %#v.", val), ErrCritical)
 }

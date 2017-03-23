@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 )
 
@@ -70,9 +71,12 @@ func (tmplrec *TemplateRecord) IsOptionsTemplateRecord() bool {
 	return tmplrec.ScopeFieldSpecifiers == nil
 }
 
+//FIXME: Needs to be unexported; 2 exported variants, 1 with session, 1 without
+
 //RegisterTemplateRecord creates a new templaterecord from a struct using the tags.
 //This will be hell to make for basiclist etc... but hey.... want to be complete
-func RegisterTemplateRecord(templateid uint16, val interface{}) (*TemplateRecord, error) {
+//Must have a session as well (may be nil)
+func RegisterTemplateRecord(session *Session, templateid uint16, val interface{}) (*TemplateRecord, error) {
 	templaterecord, err := NewTemplateRecord(templateid)
 	if err != nil {
 		return nil, err
@@ -81,28 +85,110 @@ func RegisterTemplateRecord(templateid uint16, val interface{}) (*TemplateRecord
 	//Must check if it is a struct!!
 	value := reflect.ValueOf(val)
 	if value.Type().Kind() != reflect.Struct {
-		return nil, NewError("Can not create a record from a single value. Must use struct.", ErrCritical)
+		return nil, NewError("Can not create template record from a single value. Must use struct.", ErrCritical)
 	}
 	for i := 0; i < value.NumField(); i++ { // iterates through every struct type field
-		getFieldSpecifierFromValue(value.Field(i), strings.Split(value.Type().Field(i).Tag.Get("ipfix"), ","))
+		_, err := getFieldSpecifierFromValue(value.Field(i), strings.Split(value.Type().Field(i).Tag.Get("ipfix"), ","))
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
 
 	return templaterecord, nil
 }
 
-BOOKMARK
 func getFieldSpecifierFromValue(value reflect.Value, tags []string) (*FieldSpecifier, error) {
-	//enterpriseid := 0
-	//fieldid := 0
-	//fieldlen := 0
+	enterpriseid := -1
+	fieldid := -1
+	fieldlen := -1
+	subtemplateid := -1
+	fielddesc := ""
+	issubtemplatelist := false
+	issubtemplatemultilist := false
+	var fieldtype FieldValue
 
-	fmt.Println(value.Type().Kind(), tags)
-	if value.Type().Kind() == reflect.Struct {
-		fmt.Println("str")
+	fmt.Println(">>>", value.Type().Kind(), tags)
+	for _, tag := range tags {
+		elm := strings.SplitN(tag, ":", 2)
+		if len(elm) == 2 {
+			var err error
+			switch elm[0] {
+			case "e": //Enterprise ID of the field
+				if enterpriseid > -1 {
+					return nil, NewError("Can not define enterprise id more than once!", ErrCritical)
+				}
+				enterpriseid, err = strconv.Atoi(elm[1])
+			case "id": //Field ID of the field
+				if fieldid > -1 {
+					return nil, NewError("Can not define field id more than once!", ErrCritical)
+				}
+				fieldid, err = strconv.Atoi(elm[1])
+			case "len": //Length as sent in the template. Use VariableLength value for variable (i.e.65535)
+				if fieldlen > -1 {
+					return nil, NewError("Can not define field length more than once!", ErrCritical)
+				}
+				fieldlen, err = strconv.Atoi(elm[1])
+			case "subtemplateid": //The template ID we want to give  the subtemplate
+				if subtemplateid > -1 {
+					return nil, NewError("Can not define subtemplate id more than once!", ErrCritical)
+				}
+				subtemplateid, err = strconv.Atoi(elm[1])
+			case "type": //Override a field type (might be inferred from go type)
+				if fieldtype != nil {
+					return nil, NewError("Can not define field type more than once!", ErrCritical)
+				}
+				fieldtype, err = getNewFieldValueByString(elm[1])
+				switch elm[1] {
+				case "subtemplatelist":
+					issubtemplatelist = true
+				case "subtemplatemultilist":
+					issubtemplatemultilist = true
+				}
+			case "desc":
+				fielddesc = elm[1]
+			}
+			if err != nil {
+				return nil, err
+			}
+
+		} else {
+			fmt.Println("FLAG:", elm)
+		}
+	}
+
+	if value.Type().Kind() == reflect.Slice { //Basically, just a basiclist of a singular field type
+		fmt.Println("slice")
+		fmt.Println("Basiclist")
+	}
+
+	if value.Type().Kind() == reflect.Struct { //This returns a whole different structure of template record
+		fmt.Println("JAJA")
+		if !issubtemplatelist && !issubtemplatemultilist {
+			fmt.Println("OOOK!")
+			return nil, NewError("Must map a struct to either 'subtemplatelist' or 'subtemplatemultilist'", ErrCritical)
+		}
+		fmt.Println("Okido")
 		for i := 0; i < value.NumField(); i++ { // iterates through every struct type field
 			getFieldSpecifierFromValue(value.Field(i), strings.Split(value.Type().Field(i).Tag.Get("ipfix"), ","))
 		}
 	}
+
+	isdefined, iscustom := fieldInstanceExists(uint32(enterpriseid), uint16(fieldid))
+	if !isdefined || iscustom {
+		if iscustom {
+			fmt.Println("Unregistering: ", enterpriseid, fieldid, fieldlen, fielddesc, fmt.Sprintf("%#v", fieldtype), subtemplateid)
+			unregerr := UnregisterCustomField(uint32(enterpriseid), uint16(fieldid))
+			if unregerr != nil {
+				return nil, unregerr
+			}
+		}
+		fmt.Println("Registering: ", enterpriseid, fieldid, fieldlen, fielddesc, fmt.Sprintf("%#v", fieldtype))
+
+		regerr := RegisterCustomField(uint32(enterpriseid), uint16(fieldid), uint16(fieldlen), fielddesc, fieldtype)
+		if regerr != nil {
+			return nil, regerr
+		}
+	} //At this point we know the field exists in our mappings
 
 	return nil, nil
 }
